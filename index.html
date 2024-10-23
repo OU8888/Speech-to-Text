@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STT - 語音轉文字</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+</head>
+<body>
+    <main>
+        <div id="upload-container">
+            <div id="drop-area">
+                <div class="upload-content">
+                    <i class="fa-solid fa-arrow-up-from-bracket upload-icon"></i>
+                    <p class="upload-text">點擊或拖曳上傳檔案</p>
+                </div>
+                <p class="file-types">(限制25MB max) 支援: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm</p>
+                <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+            </div>
+        </div>
+
+        <div id="processing-container" style="display: none;">
+            <div id="processing-area">
+                <div class="upload-content">
+                    <p class="upload-text">上傳中<span class="dots"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="result-container" style="display: none;">
+            <div id="top-bar">
+                <a href="#" id="backLink" class="back-btn" aria-label="返回上傳頁面">
+                    <span class="iconify" data-icon="mingcute:arrow-left-line"></span>
+                </a>
+                <a href="#" id="downloadLink" class="download-btn" aria-label="下載檔案">
+                    <span class="iconify" data-icon="lucide:download"></span>
+                </a>
+            </div>
+            <div id="content-area">
+                <div id="summary-container">
+                    <h2>內容摘要</h2>
+                    <div id="summary-text"></div>
+                </div>
+                <div id="transcript-container">
+                    <div id="transcript-header">
+                        <select id="format-select">
+                            <option value="srt">srt</option>
+                            <option value="txt">txt</option>
+                        </select>
+                    </div>
+                    <div id="transcript-text"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
