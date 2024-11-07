@@ -30,16 +30,21 @@ function handleDrop(e) {
     e.preventDefault();
     dropArea.classList.remove('highlight');
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('audio/')) {
+    if (!file) {
+        alert('請選擇檔案');
+        return;
+    }
+    
+    if (checkFileSize(file) && checkFileType(file)) {
         processAudioFile(file);
-    } else {
-        alert('請上傳音訊檔案');
     }
 }
 
 function handleFileSelect(e) {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+    
+    if (checkFileSize(file) && checkFileType(file)) {
         processAudioFile(file);
     }
 }
@@ -95,70 +100,126 @@ async function convertToTraditional(text) {
     return await converter(text);
 }
 
-function displayTranscript(transcript) {
+// 添加全局變數來存儲轉錄數據
+let currentTranscriptData = null;
+
+// 修改 displayTranscript 函數
+function displayTranscript(transcriptData) {
+    currentTranscriptData = transcriptData;
     const transcriptContainer = document.getElementById('transcript-text');
     const formatSelect = document.getElementById('format-select');
 
     function updateTranscriptDisplay() {
         const selectedFormat = formatSelect.value;
-        let formattedTranscript = '';
-
+        
         if (selectedFormat === 'srt') {
-            formattedTranscript = convertToSRT(transcript);
-        } else if (selectedFormat === 'txt') {
-            formattedTranscript = convertToTXT(transcript);
+            displaySRTFormat(transcriptContainer, currentTranscriptData);
         } else {
-            formattedTranscript = formatJSONTranscript(transcript);
+            displayTXTFormat(transcriptContainer, currentTranscriptData);
         }
-
-        transcriptContainer.innerHTML = `<pre>${formattedTranscript}</pre>`;
+        
         updateDownloadLink();
     }
 
     formatSelect.addEventListener('change', updateTranscriptDisplay);
-
     updateTranscriptDisplay();
 }
 
-function formatJSONTranscript(transcript) {
-    return transcript.segments.map(segment => {
-        const startTime = formatTime(segment.start);
-        return `${startTime}\n${segment.text}\n`;
-    }).join('\n');
+// SRT 格式顯示
+function displaySRTFormat(container, data) {
+    container.innerHTML = '';
+    
+    data.segments.forEach((segment, index) => {
+        const entry = document.createElement('div');
+        entry.className = 'transcript-entry';
+        entry.dataset.index = index;
+
+        const timeAndTextDiv = document.createElement('div');
+        timeAndTextDiv.className = 'transcript-content';
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'transcript-time';
+        timeSpan.textContent = `${formatSRTTime(segment.start)} --> ${formatSRTTime(segment.end)}`;
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'transcript-text';
+        textSpan.textContent = segment.text;
+        textSpan.onclick = () => makeEditable(textSpan, index);
+
+        timeAndTextDiv.appendChild(timeSpan);
+        timeAndTextDiv.appendChild(textSpan);
+        entry.appendChild(timeAndTextDiv);
+        container.appendChild(entry);
+    });
 }
 
-function convertToSRT(transcript) {
-    return transcript.segments.map((segment, index) => {
-        const startTime = formatSRTTime(segment.start);
-        const endTime = formatSRTTime(segment.end);
-        return `${index + 1}\n${startTime} --> ${endTime}\n${segment.text}\n`;
-    }).join('\n');
+// TXT 格式顯示
+function displayTXTFormat(container, data) {
+    container.innerHTML = '';
+    
+    data.segments.forEach((segment, index) => {
+        const entry = document.createElement('div');
+        entry.className = 'transcript-entry';
+        entry.dataset.index = index;
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'transcript-text';
+        textDiv.textContent = segment.text;
+        textDiv.onclick = () => makeEditable(textDiv, index);
+
+        entry.appendChild(textDiv);
+        container.appendChild(entry);
+    });
 }
 
-function convertToTXT(transcript) {
-    return transcript.segments.map(segment => segment.text).join('\n');
+// 使文字可編輯
+function makeEditable(element, index) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'transcript-input';
+    input.value = element.textContent;
+    
+    input.onblur = () => saveEdit(input, element, index);
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            input.blur();
+        } else if (e.key === 'Escape') {
+            element.parentNode.replaceChild(element, input);
+        }
+    };
+
+    element.parentNode.replaceChild(input, element);
+    input.focus();
 }
 
-function formatTime(seconds) {
-    const date = new Date(seconds * 1000);
-    const hours = date.getUTCHours().toString().padStart(2, '0');
-    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    const secs = date.getUTCSeconds().toString().padStart(2, '0');
-    return `${hours}:${minutes}:${secs}s`;
+// 保存編輯
+function saveEdit(input, originalElement, index) {
+    const newText = input.value.trim();
+    originalElement.textContent = newText;
+    
+    // 更新數據
+    currentTranscriptData.segments[index].text = newText;
+    
+    // 替換回原始元素
+    input.parentNode.replaceChild(originalElement, input);
+    
+    // 更新下載鏈接
+    updateDownloadLink();
 }
 
-function formatSRTTime(seconds) {
-    const date = new Date(seconds * 1000);
-    const hours = date.getUTCHours().toString().padStart(2, '0');
-    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    const secs = date.getUTCSeconds().toString().padStart(2, '0');
-    const ms = date.getUTCMilliseconds().toString().padStart(3, '0');
-    return `${hours}:${minutes}:${secs},${ms}`;
-}
-
+// 修改 updateDownloadLink 函數
 function updateDownloadLink() {
     const format = formatSelect.value;
-    const content = transcriptText.textContent;
+    let content;
+    
+    if (format === 'srt') {
+        content = currentTranscriptData.segments.map((segment, index) => {
+            return `${index + 1}\n${formatSRTTime(segment.start)} --> ${formatSRTTime(segment.end)}\n${segment.text}\n`;
+        }).join('\n');
+    } else {
+        content = currentTranscriptData.segments.map(segment => segment.text).join('\n');
+    }
+    
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     downloadLink.href = url;
@@ -172,7 +233,7 @@ async function updateTranscript(transcript) {
         return item;
     }));
 
-    // 更新 DOM
+    // 更 DOM
     const transcriptContainer = document.getElementById('transcript-text');
     transcriptContainer.innerHTML = '';
     convertedTranscript.forEach(item => {
@@ -200,37 +261,417 @@ backLink.addEventListener('click', (e) => {
     fileInput.value = '';
 });
 
+// 初始化音頻上下文
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+// 創建 Web Worker 用於 MP3 轉換
+const workerBlob = new Blob([`
+    importScripts('https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js');
+    
+    self.onmessage = function(e) {
+        const { audioData, sampleRate, channels } = e.data;
+        const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, 96);
+        const mp3Data = [];
+        
+        const samples = audioData[0].length;
+        const blockSize = 1152;
+        
+        for (let i = 0; i < samples; i += blockSize) {
+            const left = audioData[0].slice(i, i + blockSize);
+            const right = channels > 1 ? audioData[1].slice(i, i + blockSize) : left;
+            
+            const leftInt = new Int16Array(left.map(x => Math.max(-32768, Math.min(32767, x * 32768))));
+            const rightInt = new Int16Array(right.map(x => Math.max(-32768, Math.min(32767, x * 32768))));
+            
+            const mp3buf = mp3encoder.encodeBuffer(leftInt, rightInt);
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+        }
+        
+        const end = mp3encoder.flush();
+        if (end.length > 0) {
+            mp3Data.push(end);
+        }
+        
+        self.postMessage({
+            type: 'complete',
+            data: mp3Data
+        });
+    };
+`], { type: 'application/javascript' });
+
+const workerUrl = URL.createObjectURL(workerBlob);
+
+// 修改處理文件的主要函數
 async function processAudioFile(file) {
     uploadContainer.style.display = 'none';
     processingContainer.style.display = 'block';
 
     try {
-        const transcriptionData = await transcribeAudio(file);
+        let audioFile = file;
+        
+        // 如果是視頻文件，先提取音頻
+        if (file.type.startsWith('video/')) {
+            updateProgress(0, '正在從影片中提取音頻...');
+            
+            // 提取音頻並轉換為 MP3
+            const audioBuffer = await extractAudio(file);
+            updateProgress(30, '正在轉換為 MP3...');
+            
+            const mp3Blob = await convertToMp3(audioBuffer);
+            audioFile = new File([mp3Blob], 'audio.mp3', { type: 'audio/mp3' });
+            
+            updateProgress(50, '正在進行語音識別...');
+        } else {
+            updateProgress(30, '正在進行語音識別...');
+        }
+
+        // 進行語音轉文字
+        const transcriptionData = await transcribeAudio(audioFile);
+        updateProgress(70, '正在生成摘要...');
+        
         const transcriptText = transcriptionData.segments.map(segment => segment.text).join(' ');
-        const traditionalText = await converter(transcriptText); // 使用 converter 轉換
+        const traditionalText = await converter(transcriptText);
         const summary = await generateSummary(traditionalText);
 
-        // 修改這裡來更好地呈現心智圖筆記式摘要
+        updateProgress(90, '正在處理最終結果...');
+
+        // 更新界面
         const summaryContainer = document.getElementById('summary-text');
         summaryContainer.innerHTML = summary.replace(/\n/g, '<br>');
 
-        // 轉換轉錄文本為繁體中文
-        transcriptionData.segments = await Promise.all(transcriptionData.segments.map(async (segment) => {
-            segment.text = await converter(segment.text);
-            return segment;
-        }));
+        // 轉換為繁體中文
+        transcriptionData.segments = await Promise.all(
+            transcriptionData.segments.map(async (segment) => {
+                segment.text = await converter(segment.text);
+                return segment;
+            })
+        );
 
         displayTranscript(transcriptionData);
 
-        uploadContainer.style.display = 'none';
-        processingContainer.style.display = 'none';
-        resultContainer.style.display = 'block';
+        // 顯示結果界面
+        updateProgress(100, '處理完成！');
+        setTimeout(() => {
+            uploadContainer.style.display = 'none';
+            processingContainer.style.display = 'none';
+            resultContainer.style.display = 'block';
+        }, 500);
 
         updateDownloadLink();
     } catch (error) {
-        console.error('處理音頻文件時出錯:', error);
-        alert('處理音頻文件時出錯: ' + error.message);
+        console.error('處理文件時出錯:', error);
+        alert('處理文件時出錯: ' + error.message);
         uploadContainer.style.display = 'block';
         processingContainer.style.display = 'none';
     }
 }
+
+// 從文件中提取音頻
+async function extractAudio(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const arrayBuffer = e.target.result;
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                resolve(audioBuffer);
+            } catch (error) {
+                reject(new Error('無法提取音頻，請確保文件格式正確'));
+            }
+        };
+        reader.onerror = () => reject(new Error('讀取文件失敗'));
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+// 將 AudioBuffer 轉換為 MP3
+async function convertToMp3(audioBuffer) {
+    return new Promise((resolve, reject) => {
+        try {
+            const worker = new Worker(workerUrl);
+            const channels = audioBuffer.numberOfChannels;
+            const audioData = [];
+            
+            for (let i = 0; i < channels; i++) {
+                audioData.push(audioBuffer.getChannelData(i));
+            }
+            
+            worker.onmessage = function(e) {
+                if (e.data.type === 'progress') {
+                    // 更新 MP3 轉換進度（30-50%之間）
+                    const progress = 30 + (e.data.progress * 0.2);
+                    updateProgress(progress, '正在轉換為 MP3...');
+                } else if (e.data.type === 'complete') {
+                    const blob = new Blob(e.data.data, { type: 'audio/mp3' });
+                    worker.terminate();
+                    resolve(blob);
+                }
+            };
+            
+            worker.onerror = function(error) {
+                worker.terminate();
+                reject(new Error('轉換 MP3 失敗'));
+            };
+            
+            worker.postMessage({
+                audioData: audioData,
+                sampleRate: audioBuffer.sampleRate,
+                channels: channels
+            });
+            
+        } catch (error) {
+            reject(new Error('轉換 MP3 時發生錯誤'));
+        }
+    });
+}
+
+// 修改進度顯示相關函數
+function updateProgress(progress, message) {
+    const progressBar = document.querySelector('#progress');
+    const progressText = document.querySelector('#processing-container .upload-text');
+    const progressPercent = document.querySelector('#progress-percent');
+    
+    if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+    }
+    if (progressText) {
+        progressText.textContent = message;
+    }
+    if (progressPercent) {
+        progressPercent.textContent = `${Math.round(progress)}%`;
+    }
+}
+
+// 檢查文件大小
+function checkFileSize(file) {
+    const maxSize = 300 * 1024 * 1024; // 300MB
+    if (file.size > maxSize) {
+        alert('文件大小不能超過 300MB');
+        return false;
+    }
+    return true;
+}
+
+// 檢查文件類型
+function checkFileType(file) {
+    const validTypes = [
+        // 視頻格式
+        'video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska',
+        // 音頻格式
+        'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/aac', 
+        'audio/mp4', 'audio/x-m4a', 'audio/flac', 'audio/x-ms-wma'
+    ];
+    
+    // 檢查文件擴展名
+    const validExtensions = [
+        '.mp4', '.mov', '.webm', '.mkv', 
+        '.mp3', '.wav', '.ogg', '.aac', 
+        '.m4a', '.flac', '.wma'
+    ];
+    
+    const fileName = file.name.toLowerCase();
+    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    
+    if (!validTypes.includes(file.type) && !hasValidExtension) {
+        alert('不支援的文件格式。\n支援的格式：MP4, MOV, WebM, MKV, MP3, WAV, OGG, AAC, M4A, FLAC, WMA');
+        return false;
+    }
+    return true;
+}
+
+// 更新事件監聽器
+dropArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropArea.classList.add('highlight');
+});
+
+dropArea.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropArea.classList.remove('highlight');
+});
+
+dropArea.addEventListener('drop', handleDrop);
+
+// 添加 formatSRTTime 函數
+function formatSRTTime(seconds) {
+    const date = new Date(seconds * 1000);
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    const secs = date.getUTCSeconds().toString().padStart(2, '0');
+    const ms = date.getUTCMilliseconds().toString().padStart(3, '0');
+    return `${hours}:${minutes}:${secs},${ms}`;
+}
+
+// 添加 formatTime 函數（用於一般時間格式）
+function formatTime(seconds) {
+    const date = new Date(seconds * 1000);
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    const secs = date.getUTCSeconds().toString().padStart(2, '0');
+    return `${hours}:${minutes}:${secs}`;
+}
+
+// 添加一個轉義特殊字符的函數
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// 修改 updateSearchResults 函數
+function updateSearchResults() {
+    const searchInput = document.getElementById('searchInput');
+    const replaceInput = document.getElementById('replaceInput');
+    const searchResults = document.getElementById('searchResults');
+    const resultCount = document.getElementById('resultCount');
+    
+    const searchTerm = searchInput.value;
+    const replaceTerm = replaceInput.value;
+    searchResults.innerHTML = '';
+    let count = 0;
+
+    if (!searchTerm) {
+        resultCount.textContent = '0';
+        return;
+    }
+
+    if (!currentTranscriptData || !currentTranscriptData.segments) {
+        return;
+    }
+
+    // 使用轉義後的搜索詞創建正則表達式
+    const searchRegex = new RegExp(escapeRegExp(searchTerm), 'g');
+
+    currentTranscriptData.segments.forEach((segment, index) => {
+        if (segment.text.includes(searchTerm)) {
+            count++;
+            const row = document.createElement('tr');
+            
+            // 時間列
+            const timeCell = document.createElement('td');
+            timeCell.textContent = formatSRTTime(segment.start);
+            
+            // 原文列
+            const originalCell = document.createElement('td');
+            originalCell.innerHTML = segment.text.replace(
+                searchRegex,
+                `<span class="highlight">${searchTerm}</span>`
+            );
+            
+            // 結果列
+            const resultCell = document.createElement('td');
+            if (replaceTerm === '') {
+                // 如果替換文字為空，顯示刪除效果
+                resultCell.innerHTML = segment.text.replace(
+                    searchRegex,
+                    '<span style="color: #ff4444; text-decoration: line-through;">' + searchTerm + '</span>'
+                );
+            } else {
+                // 如果有替換文字，顯示替換效果
+                resultCell.innerHTML = segment.text.replace(
+                    searchRegex,
+                    '<span style="color: #22c55e;">' + replaceTerm + '</span>'
+                );
+            }
+            
+            // 狀態列
+            const statusCell = document.createElement('td');
+            if (searchTerm && segment.text.includes(searchTerm)) {
+                const checkIcon = document.createElement('span');
+                checkIcon.className = 'iconify';
+                checkIcon.setAttribute('data-icon', 'mingcute:check-line');
+                checkIcon.style.color = '#22c55e';
+                statusCell.appendChild(checkIcon);
+            }
+            
+            row.appendChild(timeCell);
+            row.appendChild(originalCell);
+            row.appendChild(resultCell);
+            row.appendChild(statusCell);
+            searchResults.appendChild(row);
+        }
+    });
+
+    resultCount.textContent = count;
+}
+
+// 將查找替換相關的初始化代碼移到 DOMContentLoaded 事件中
+document.addEventListener('DOMContentLoaded', () => {
+    // 原有的初始化代碼...
+
+    // 查找替換相關的變數和函數
+    const findReplaceBtn = document.getElementById('findReplaceBtn');
+    const findReplaceModal = document.getElementById('findReplaceModal');
+    const searchInput = document.getElementById('searchInput');
+    const replaceInput = document.getElementById('replaceInput');
+    const searchResults = document.getElementById('searchResults');
+    const resultCount = document.getElementById('resultCount');
+    const replaceAllBtn = document.getElementById('replaceAllBtn');
+    const closeBtn = document.querySelector('.close-btn');
+
+    // 打開查找替換對話框
+    findReplaceBtn.addEventListener('click', (e) => {
+        e.preventDefault(); // 添加這行防止默認行為
+        findReplaceModal.style.display = 'flex';
+        searchInput.focus();
+        updateSearchResults();
+    });
+
+    // 關閉對話框
+    closeBtn.addEventListener('click', () => {
+        findReplaceModal.style.display = 'none';
+    });
+
+    // 點擊對話框外部關閉
+    findReplaceModal.addEventListener('click', (e) => {
+        if (e.target === findReplaceModal) {
+            findReplaceModal.style.display = 'none';
+        }
+    });
+
+    // 清除按鈕功能
+    document.querySelectorAll('.clear-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = btn.previousElementSibling;
+            input.value = '';
+            input.focus();
+            updateSearchResults();
+        });
+    });
+
+    // 搜索輸入更新
+    searchInput.addEventListener('input', updateSearchResults);
+    replaceInput.addEventListener('input', updateSearchResults);
+
+    // 替換按鈕功能
+    replaceAllBtn.addEventListener('click', () => {
+        const searchTerm = document.getElementById('searchInput').value;
+        const replaceTerm = document.getElementById('replaceInput').value;
+
+        if (!searchTerm) return;
+
+        // 使用轉義後的搜索詞創建正則表達式
+        const searchRegex = new RegExp(escapeRegExp(searchTerm), 'g');
+
+        // 執行替換
+        currentTranscriptData.segments = currentTranscriptData.segments.map(segment => ({
+            ...segment,
+            text: segment.text.replace(searchRegex, replaceTerm || '')
+        }));
+
+        // 更新顯示
+        displayTranscript(currentTranscriptData);
+        
+        // 關閉模態框
+        document.getElementById('findReplaceModal').style.display = 'none';
+        
+        // 清空輸入框
+        document.getElementById('searchInput').value = '';
+        document.getElementById('replaceInput').value = '';
+        
+        // 更新下載鏈接
+        updateDownloadLink();
+    });
+});
