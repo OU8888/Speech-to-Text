@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 </head>
 <body>
     <main>
@@ -18,15 +19,19 @@
                     <i class="fa-solid fa-arrow-up-from-bracket upload-icon"></i>
                     <p class="upload-text">點擊或拖曳上傳檔案</p>
                 </div>
-                <p class="file-types">(限制25MB max) 支援: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm</p>
-                <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+                <p class="file-types">(限制300MB max) 支援: MP4, MOV, WebM, MKV, MP3, WAV, OGG, AAC, M4A, FLAC, WMA</p>
+                <input type="file" id="fileInput" accept="audio/*,video/*" style="display: none;">
             </div>
         </div>
 
         <div id="processing-container" style="display: none;">
             <div id="processing-area">
-                <div class="upload-content">
-                    <p class="upload-text">上傳中<span class="dots"></span></p>
+                <div class="progress-bar">
+                    <div id="progress" style="width: 0%"></div>
+                </div>
+                <div class="progress-info">
+                    <span id="progress-percent">0%</span>
+                    <p class="upload-text">準備處理...</p>
                 </div>
             </div>
         </div>
@@ -47,16 +52,67 @@
                 </div>
                 <div id="transcript-container">
                     <div id="transcript-header">
-                        <select id="format-select">
-                            <option value="srt">srt</option>
-                            <option value="txt">txt</option>
-                        </select>
+                        <div class="header-controls">
+                            <select id="format-select">
+                                <option value="srt">srt</option>
+                                <option value="txt">txt</option>
+                            </select>
+                            <button id="findReplaceBtn" class="find-replace-btn">
+                                <span class="iconify" data-icon="mingcute:search-line"></span>
+                                查找
+                            </button>
+                        </div>
                     </div>
-                    <div id="transcript-text"></div>
+                    <div id="transcript-text" class="transcript-editor"></div>
                 </div>
             </div>
         </div>
     </main>
     <script src="script.js"></script>
+
+    <!-- 添加查找替換對話框 -->
+    <div id="findReplaceModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>查找關鍵詞</h2>
+                <button class="close-btn">
+                    <span class="iconify" data-icon="mingcute:close-line"></span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="search-inputs">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" placeholder="查找關鍵詞" />
+                        <button class="clear-btn">
+                            <span class="iconify" data-icon="mingcute:close-line"></span>
+                        </button>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="replaceInput" placeholder="替換為" />
+                        <button class="clear-btn">
+                            <span class="iconify" data-icon="mingcute:close-line"></span>
+                        </button>
+                    </div>
+                </div>
+                <div class="results-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>開始時間</th>
+                                <th>原文</th>
+                                <th>結果</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="searchResults"></tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <div class="results-count">共 <span id="resultCount">0</span> 條結果</div>
+                    <button id="replaceAllBtn" class="replace-btn">替換</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
