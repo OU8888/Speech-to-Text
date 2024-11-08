@@ -107,22 +107,15 @@ let currentTranscriptData = null;
 function displayTranscript(transcriptData) {
     currentTranscriptData = transcriptData;
     const transcriptContainer = document.getElementById('transcript-text');
-    const formatSelect = document.getElementById('format-select');
-
-    function updateTranscriptDisplay() {
-        const selectedFormat = formatSelect.value;
-        
-        if (selectedFormat === 'srt') {
-            displaySRTFormat(transcriptContainer, currentTranscriptData);
-        } else {
-            displayTXTFormat(transcriptContainer, currentTranscriptData);
-        }
-        
-        updateDownloadLink();
+    const currentValue = document.querySelector('.select-value')?.textContent || 'srt';
+    
+    if (currentValue === 'srt') {
+        displaySRTFormat(transcriptContainer, currentTranscriptData);
+    } else {
+        displayTXTFormat(transcriptContainer, currentTranscriptData);
     }
-
-    formatSelect.addEventListener('change', updateTranscriptDisplay);
-    updateTranscriptDisplay();
+    
+    updateDownloadLink();
 }
 
 // SRT 格式顯示
@@ -209,10 +202,10 @@ function saveEdit(input, originalElement, index) {
 
 // 修改 updateDownloadLink 函數
 function updateDownloadLink() {
-    const format = formatSelect.value;
+    const currentValue = document.querySelector('.select-value').textContent;
     let content;
     
-    if (format === 'srt') {
+    if (currentValue === 'srt') {
         content = currentTranscriptData.segments.map((segment, index) => {
             return `${index + 1}\n${formatSRTTime(segment.start)} --> ${formatSRTTime(segment.end)}\n${segment.text}\n`;
         }).join('\n');
@@ -223,7 +216,7 @@ function updateDownloadLink() {
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     downloadLink.href = url;
-    downloadLink.download = `transcript.${format}`;
+    downloadLink.download = `transcript.${currentValue}`;
 }
 
 async function updateTranscript(transcript) {
@@ -311,35 +304,21 @@ async function processAudioFile(file) {
     try {
         let audioFile = file;
         
-        // 如果是視頻文件，先提取音頻
         if (file.type.startsWith('video/')) {
             updateProgress(0, '正在從影片中提取音頻...');
-            
-            // 提取音頻並轉換為 MP3
             const audioBuffer = await extractAudio(file);
-            updateProgress(30, '正在轉換為 MP3...');
+            updateProgress(40, '正在轉換為 MP3...');
             
             const mp3Blob = await convertToMp3(audioBuffer);
             audioFile = new File([mp3Blob], 'audio.mp3', { type: 'audio/mp3' });
             
-            updateProgress(50, '正在進行語音識別...');
+            updateProgress(70, '正在進行語音識別...');
         } else {
             updateProgress(30, '正在進行語音識別...');
         }
 
-        // 進行語音轉文字
         const transcriptionData = await transcribeAudio(audioFile);
-        updateProgress(70, '正在生成摘要...');
-        
-        const transcriptText = transcriptionData.segments.map(segment => segment.text).join(' ');
-        const traditionalText = await converter(transcriptText);
-        const summary = await generateSummary(traditionalText);
-
         updateProgress(90, '正在處理最終結果...');
-
-        // 更新界面
-        const summaryContainer = document.getElementById('summary-text');
-        summaryContainer.innerHTML = summary.replace(/\n/g, '<br>');
 
         // 轉換為繁體中文
         transcriptionData.segments = await Promise.all(
@@ -351,7 +330,6 @@ async function processAudioFile(file) {
 
         displayTranscript(transcriptionData);
 
-        // 顯示結果界面
         updateProgress(100, '處理完成！');
         setTimeout(() => {
             uploadContainer.style.display = 'none';
@@ -412,7 +390,7 @@ async function convertToMp3(audioBuffer) {
             
             worker.onerror = function(error) {
                 worker.terminate();
-                reject(new Error('轉換 MP3 失敗'));
+                reject(new Error('��換 MP3 失敗'));
             };
             
             worker.postMessage({
@@ -599,6 +577,9 @@ function updateSearchResults() {
 
 // 將查找替換相關的初始化代碼移到 DOMContentLoaded 事件中
 document.addEventListener('DOMContentLoaded', () => {
+    // 初始化選單
+    initializeSelect();
+    
     // 原有的初始化代碼...
 
     // 查找替換相關的變數和函數
@@ -624,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
         findReplaceModal.style.display = 'none';
     });
 
-    // 點擊對話框外部關閉
+    // 點擊對話框外部關
     findReplaceModal.addEventListener('click', (e) => {
         if (e.target === findReplaceModal) {
             findReplaceModal.style.display = 'none';
@@ -674,4 +655,126 @@ document.addEventListener('DOMContentLoaded', () => {
         // 更新下載鏈接
         updateDownloadLink();
     });
+
+    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+    const summaryText = document.getElementById('summary-text');
+    const summaryActions = document.querySelector('.summary-actions');
+    const regenerateSummaryBtn = document.getElementById('regenerateSummaryBtn');
+    const copySummaryBtn = document.getElementById('copySummaryBtn');
+
+    // 生成摘要的函數
+    async function generateSummaryContent() {
+        if (!currentTranscriptData || !currentTranscriptData.segments) {
+            alert('請先上傳並轉錄音頻文件');
+            return;
+        }
+
+        try {
+            generateSummaryBtn.disabled = true;
+            generateSummaryBtn.innerHTML = '<span class="iconify" data-icon="mingcute:loading-line"></span> 正在生成摘要...';
+
+            const transcriptText = currentTranscriptData.segments.map(segment => segment.text).join(' ');
+            const summary = await generateSummary(transcriptText);
+            
+            summaryText.style.display = 'block';
+            summaryText.innerHTML = summary.replace(/\n/g, '<br>');
+            generateSummaryBtn.style.display = 'none';
+            summaryActions.style.display = 'flex'; // 顯示操作按鈕
+        } catch (error) {
+            console.error('生成摘要時出錯:', error);
+            alert('生成摘要失敗: ' + error.message);
+            generateSummaryBtn.disabled = false;
+            generateSummaryBtn.innerHTML = '<span class="iconify" data-icon="mingcute:magic-line"></span> 生成內容摘要';
+        }
+    }
+
+    // 初始生成摘要
+    generateSummaryBtn.addEventListener('click', generateSummaryContent);
+
+    // 重新生成摘要
+    regenerateSummaryBtn.addEventListener('click', async () => {
+        summaryText.style.display = 'none';
+        await generateSummaryContent();
+    });
+
+    // 複製摘要內容
+    copySummaryBtn.addEventListener('click', async () => {
+        try {
+            const summaryContent = summaryText.innerText;
+            await navigator.clipboard.writeText(summaryContent);
+            
+            // 顯示複製成功的視覺反饋
+            const originalIcon = copySummaryBtn.innerHTML;
+            copySummaryBtn.innerHTML = '<span class="iconify" data-icon="mingcute:check-line"></span>';
+            copySummaryBtn.style.color = '#22c55e';
+            
+            setTimeout(() => {
+                copySummaryBtn.innerHTML = originalIcon;
+                copySummaryBtn.style.color = '';
+            }, 2000);
+        } catch (error) {
+            console.error('複製失敗:', error);
+            alert('複製失敗，請手動複製');
+        }
+    });
 });
+
+// 將 initializeSelect 函數移到外部
+function initializeSelect() {
+    const trigger = document.querySelector('.select-trigger');
+    const content = document.querySelector('.select-content');
+    const items = document.querySelectorAll('.select-item');
+    const valueSpan = document.querySelector('.select-value');
+    
+    if (!trigger || !content || !items.length || !valueSpan) {
+        console.warn('Select elements not found');
+        return;
+    }
+    
+    let currentValue = 'srt';
+
+    // 設置初始狀態
+    items.forEach(item => {
+        const isSrt = item.dataset.value === 'srt';
+        item.setAttribute('aria-selected', isSrt ? 'true' : 'false');
+    });
+
+    trigger.addEventListener('click', () => {
+        const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+        trigger.setAttribute('aria-expanded', !isExpanded);
+        content.hidden = isExpanded;
+    });
+
+    items.forEach(item => {
+        item.addEventListener('click', () => {
+            const value = item.dataset.value;
+            currentValue = value;
+            valueSpan.textContent = value;
+            
+            // 更新選中狀態
+            items.forEach(i => {
+                i.setAttribute('aria-selected', i === item);
+            });
+            
+            // 關閉選單
+            trigger.setAttribute('aria-expanded', 'false');
+            content.hidden = true;
+            
+            // 更新轉錄顯示格式
+            if (currentTranscriptData) {
+                displayTranscript(currentTranscriptData);
+            }
+            
+            // 更新下載鏈接
+            updateDownloadLink();
+        });
+    });
+
+    // 點擊外部關閉選單
+    document.addEventListener('click', (e) => {
+        if (!trigger.contains(e.target) && !content.contains(e.target)) {
+            trigger.setAttribute('aria-expanded', 'false');
+            content.hidden = true;
+        }
+    });
+}
