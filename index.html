@@ -10,13 +10,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
 <body>
     <main>
         <div id="upload-container">
             <div id="drop-area">
                 <div class="upload-content">
-                    <i class="fa-solid fa-arrow-up-from-bracket upload-icon"></i>
+                    <i class="ri-file-upload-fill upload-icon"></i>
                     <p class="upload-text">點擊或拖曳上傳檔案</p>
                 </div>
                 <p class="file-types">(限制300MB max) 支援: MP4, MOV, WebM, MKV, MP3, WAV, OGG, AAC, M4A, FLAC, WMA</p>
@@ -47,16 +48,55 @@
             </div>
             <div id="content-area">
                 <div id="summary-container">
-                    <h2>內容摘要</h2>
+                    <div class="summary-actions" style="display: none;">
+                        <button class="icon-btn" id="regenerateSummaryBtn" title="重新生成內容摘要">
+                            <span class="iconify" data-icon="ri:reset-left-fill"></span>
+                        </button>
+                        <button class="icon-btn" id="copySummaryBtn" title="複製">
+                            <span class="iconify" data-icon="ri:file-copy-2-line"></span>
+                        </button>
+                    </div>
+                    <button id="generateSummaryBtn" class="summary-btn">
+                        <span class="iconify" data-icon="mingcute:magic-line"></span>
+                        生成內容摘要
+                    </button>
                     <div id="summary-text"></div>
                 </div>
                 <div id="transcript-container">
                     <div id="transcript-header">
                         <div class="header-controls">
-                            <select id="format-select">
-                                <option value="srt">srt</option>
-                                <option value="txt">txt</option>
-                            </select>
+                            <div class="select-root">
+                                <button class="select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                                    <span class="select-value">srt</span>
+                                    <span class="select-icon">
+                                        <span class="iconify" data-icon="lucide:chevron-down"></span>
+                                    </span>
+                                </button>
+                                <div class="select-content" hidden>
+                                    <div class="select-viewport">
+                                        <div class="select-group">
+                                            <div class="select-item" data-value="srt" role="option" aria-selected="true">
+                                                <span class="select-item-indicator">
+                                                    <span class="iconify" data-icon="lucide:check"></span>
+                                                </span>
+                                                <div class="select-item-text">
+                                                    <span class="font-medium">srt</span>
+                                                    <span class="text-muted">含時間戳的字幕文件</span>
+                                                </div>
+                                            </div>
+                                            <div class="select-item" data-value="txt" role="option">
+                                                <span class="select-item-indicator">
+                                                    <span class="iconify" data-icon="lucide:check"></span>
+                                                </span>
+                                                <div class="select-item-text">
+                                                    <span class="font-medium">txt</span>
+                                                    <span class="text-muted">純文字的字幕文件</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <button id="findReplaceBtn" class="find-replace-btn">
                                 <span class="iconify" data-icon="mingcute:search-line"></span>
                                 查找
