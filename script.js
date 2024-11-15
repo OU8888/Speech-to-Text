@@ -244,14 +244,38 @@ async function updateTranscript(transcript) {
 
 backLink.addEventListener('click', (e) => {
     e.preventDefault();
+    
+    // 隱藏結果和處理容器
     resultContainer.style.display = 'none';
-    uploadContainer.style.display = 'block';
     processingContainer.style.display = 'none';
+    
+    // 顯示上傳容器
+    uploadContainer.style.display = 'block';
+    
     // 清空之前的結果
     summaryText.textContent = '';
+    summaryText.style.display = 'none';  // 隱藏摘要文字區域
     transcriptText.textContent = '';
+    
     // 重置文件輸入
     fileInput.value = '';
+    
+    // 重置生成摘要按鈕和操作按鈕
+    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+    const summaryActions = document.querySelector('.summary-actions');
+    
+    if (generateSummaryBtn) {
+        generateSummaryBtn.style.display = 'flex';  // 顯示生成摘要按鈕
+        generateSummaryBtn.disabled = false;  // 啟用按鈕
+        generateSummaryBtn.innerHTML = '<span class="iconify" data-icon="mingcute:magic-line"></span> 生成內容摘要';
+    }
+    
+    if (summaryActions) {
+        summaryActions.style.display = 'none';  // 隱藏操作按鈕
+    }
+    
+    // 重置全局變數
+    currentTranscriptData = null;
 });
 
 // 初始化音頻上下文
@@ -390,7 +414,7 @@ async function convertToMp3(audioBuffer) {
             
             worker.onerror = function(error) {
                 worker.terminate();
-                reject(new Error('��換 MP3 失敗'));
+                reject(new Error('轉換 MP3 失敗'));
             };
             
             worker.postMessage({
@@ -751,7 +775,7 @@ function initializeSelect() {
             currentValue = value;
             valueSpan.textContent = value;
             
-            // 更新選中狀態
+            // ��新選中狀態
             items.forEach(i => {
                 i.setAttribute('aria-selected', i === item);
             });
