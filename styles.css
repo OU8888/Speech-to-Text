@@ -955,3 +955,12 @@ select {
 .find-replace-btn:hover {
     background: rgba(0,0,0,0.05);
 }
+
+/* 添加摘要警告文字的樣式 */
+.summary-warning {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-top: calc(50vh - 65px - 35px/2);
+    white-space: nowrap;
+}
