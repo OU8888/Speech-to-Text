@@ -1,966 +1,935 @@
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #FFFFFF;
-    color: #222222;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
-
-header {
-    display: flex;
-    justify-content: space-between;
-    padding: 20px;
-    background-color: #ffffff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.home-btn, .download-btn {
-    text-decoration: none;
-    color: #007aff;
-    font-weight: bold;
-}
-
-main {
-    width: 100%;
-    max-width: 1000px;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-#drop-area {
-    width: 100%;
-    height: 450px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    cursor: pointer;
-    background-color: white;
-    border: 2px dashed #c7c7c7;
-    border-radius: 12px;
-    padding: 40px;
-    transition: all 0.3s ease;
-    margin-bottom: 20px;
-}
-
-#drop-area:hover {
-    border-color: #222222;
-    background-color: #f5f5f7;
-}
-
-.upload-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.upload-icon {
-    font-size: 32px;
-    color: #222222;
-    margin-bottom: 20px;
-}
-
-#drop-area .upload-text {
-    margin: 0;
-    font-size: 24px;
-    color: #1d1d1f;
-    margin-bottom: 10px;
-}
-
-#drop-area .file-types {
-    font-size: 14px;
-    color: #666;
-    margin-top: 8px;
-}
-
-#drop-area.highlight {
-    border-color: #222222;
-    background-color: #f5f5f7;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 6px;
-    background-color: #f0f0f0;
-    border-radius: 3px;
-    margin: 20px 0;
-    overflow: hidden;
-}
-
-#progress {
-    height: 100%;
-    background-color: #222222;
-    width: 0;
-    transition: width 0.3s ease-in-out;
-    border-radius: 3px;
-}
-
-#result-container {
-    position: absolute;
-    top: 65px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    padding-top: 0;
-}
-
-#summary-container {
-    position: fixed;
-    top: 65px;
-    left: 0;
-    bottom: 0;
-    width: 380px;
-    background: rgba(244,244,244,1);
-    overflow-y: auto;
-    padding: 20px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.summary-btn {
-    width: 150px;
-    height: 35px;
-    background: rgba(255,255,255,1);
-    border: 1px solid rgba(226,226,226,1);
-    border-radius: 8px;
-    font-family: Inter, sans-serif;
-    font-size: 14px;
-    color: rgba(0,0,0,1);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    margin-top: calc(50vh - 65px - 35px/2);
-}
-
-.summary-btn:hover {
-    background: rgba(0,0,0,0.05);
-}
-
-.summary-btn .iconify {
-    font-size: 18px;
-}
-
-#summary-text {
-    width: 100%;
-    margin-top: 20px;
-    color: rgba(0,0,0,1);
-    font-family: Inter, sans-serif;
-    font-weight: 300;
-    font-size: 14px;
-    line-height: 1.5;
-    display: none;
-    padding-bottom: 20px;
-}
-
-#transcript-container {
-    position: fixed;
-    top: 65px;
-    left: 380px;
-    right: 0;
-    bottom: 0;
-    background: rgba(255,255,255,1);
-    overflow-y: auto;
-    padding: 65px 20px 20px;
-    box-sizing: border-box;
-    height: calc(100vh - 150px);
-}
-
-.mindmap-container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.mindmap-node {
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 10px;
-    margin: 5px 0;
-    max-width: 80%;
-}
-
-.mindmap-root {
-    font-weight: bold;
-    background-color: #e6f3ff;
-}
-
-.mindmap-branch {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    margin-left: 20px;
-    position: relative;
-}
-
-.mindmap-branch::before {
-    content: '';
-    position: absolute;
-    left: -10px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background-color: #ddd;
-}
-
-#options-container {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    left: 380px;
-    display: flex;
-    justify-content: flex-end;
-    padding: 10px 20px;
-    background-color: #FFFFFF;
-    border-top: 1px solid #BDBDBD;
-    box-sizing: border-box;
-}
-
-select {
-    width: 150px;
-    height: 40px;
-    background: rgba(255,255,255,1);
-    border: 1px solid rgba(233,233,233,1);
-    border-radius: 8px;
-    font-family: Oswald, sans-serif;
-    font-weight: 200;
-    font-size: 16px;
-    color: rgba(92,92,92,1);
-    padding: 0 10px;
-    margin-left: 10px;
-}
-
-.download-btn {
-    text-decoration: none;
-    color: #000000;
-    background-color: transparent;
-    padding: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 33px;
-    height: 33px;
-    border-radius: 50%;
-    transition: background-color 0.3s ease;
-}
-
-.download-btn:hover {
-    background-color: #f0f0f0;
-}
-
-body, input, select, button {
-    font-family: 'Noto Sans JP', sans-serif;
-}
-
-#processing-area {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 40px 20px;
-    text-align: center;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 6px;
-    background-color: #f0f0f0;
-    border-radius: 3px;
-    margin: 20px 0;
-    overflow: hidden;
-}
-
-#progress {
-    height: 100%;
-    background-color: #222222;
-    width: 0;
-    transition: width 0.3s ease-in-out;
-    border-radius: 3px;
-}
-
-.progress-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-#progress-percent {
-    font-size: 16px;
-    font-weight: 500;
-    color: #222222;
-}
-
-.upload-text {
-    margin: 0;
-    font-size: 14px;
-    color: #666666;
-}
-
-/* 移除 processing-area 的邊框樣式 */
-#processing-area::before {
-    display: none;
-}
-
-.dots::after {
-    content: '';
-    animation: dots 1.5s steps(4, end) infinite;
-}
-
-@keyframes dots {
-    0%, 20% { content: ''; }
-    40% { content: '.'; }
-    60% { content: '..'; }
-    80%, 100% { content: '...'; }
-}
-
-/* 修改頂部欄的樣式 */
-#top-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 65px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    background-color: #FFFFFF;
-    border-bottom: 1px solid #BDBDBD;
-    z-index: 1000;
-}
-
-/* 修改返回和下載按鈕的樣式 */
-.back-btn,
-.download-btn {
-    width: 33px; /* 返回按鈕改為 33px */
-    height: 33px; /* 返回按鈕改為 33px */
-    border-radius: 50%;
-    background-color: transparent;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-decoration: none;
-    color: #333;
-    transition: background-color 0.3s ease;
-}
-
-/* 單獨調整下載按鈕的大小 */
-.download-btn {
-    width: 20px;
-    height: 20px;
-    position: relative;
-    top: -3px; /* 保持向上移動 3 像素 */
-}
-
-/* 滑鼠懸停時的效果 */
-.back-btn:hover,
-.download-btn:hover {
-    background-color: #f0f0f0;
-}
-
-.back-btn .iconify,
-.download-btn .iconify {
-    font-size: 16px;
-}
-
-/* 調整結果容器的頂部內邊距 */
-#result-container {
-    padding-top: 65px; /* 與 top-bar 的高度相同 */
-}
-
-/* 刪除這個重複的樣式 */
-/*
-#top-bar {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-}
-
-.back-btn, .download-btn {
-    width: 25px;
-    height: 25px;
-    border-radius: 50%;
-    background-color: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-decoration: none;
-    color: #333;
-}
-
-.back-btn .iconify, .download-btn .iconify {
-    font-size: 16px;
-}
-*/
-
-#options-container {
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-    padding: 10px 20px;
-    box-sizing: border-box;
-    background-color: #FFFFFF;
-    border-top: 1px solid #BDBDBD;
-}
-
-select {
-    padding: 5px 10px;
-    border-radius: 5px;
-    border: 1px solid #d1d1d6;
-    background-color: #ffffff;
-    font-size: 14px;
-    margin-left: 10px;
-}
-
-#summary-container h2 {
-    color: rgba(72,72,72,1);
-    font-family: Oswald, sans-serif;
-    font-weight: 600;
-    font-size: 16px;
-    margin-top: 42px;
-    margin-bottom: 20px;
-}
-
-#summary-text {
-    color: rgba(0,0,0,1);
-    font-family: Inter, sans-serif;
-    font-weight: 300;
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-#transcript-text {
-    color: rgba(0,0,0,1);
-    font-family: Inter, sans-serif;
-    font-weight: 400;
-    font-size: 16px;
-    line-height: 1.5;
-}
-
-/* 在文件末尾添加以下樣式 */
-
-.srt-entry {
-    margin-bottom: 20px;
-}
-
-.srt-number {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.srt-timecode {
-    color: #666;
-    font-family: monospace;
-    margin-bottom: 5px;
-}
-
-.srt-text {
-    margin-left: 20px;
-}
-
-/* 轉錄編輯器樣式 */
-.transcript-editor {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    padding: 1rem;
-    gap: 1rem;
-    display: flex;
-    flex-direction: column;
-}
-
-.transcript-entry {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.5rem;
-    border-radius: 0.375rem;
-    transition: background-color 0.3s;
-}
-
-.transcript-entry:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-.transcript-entry:nth-child(even) {
-    background-color: rgba(0, 0, 0, 0.03);
-}
-
-.transcript-time {
-    min-width: 280px; /* 調整時間碼的寬度 */
-    font-family: monospace;
-    font-size: 0.875rem;
-    color: #666;
-    white-space: nowrap; /* 防止時間碼換行 */
-}
-
-.transcript-text {
-    flex: 1;
-    padding: 0.5rem;
-    border-radius: 0.375rem;
-    cursor: text;
-}
-
-.transcript-text:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-.transcript-input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 0.375rem;
-    font-size: inherit;
-    font-family: inherit;
-    background-color: white;
-}
-
-.transcript-input:focus {
-    outline: none;
-    border-color: #222;
-    box-shadow: 0 0 0 2px rgba(34, 34, 34, 0.1);
-}
-
-.transcript-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    width: 100%;
-}
-
-/* 查找替換按鈕樣式 */
-.header-controls {
-    position: fixed;
-    top: 65px;
-    left: 380px;
-    right: 0;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    padding: 20px;
-    margin-left: 17px;
-    border-bottom: 1px solid #e5e5e5;
-    background: white;
-    z-index: 100;
-    box-sizing: border-box;
-}
-
-.find-replace-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 12px;
-    border: 1px solid #d1d1d6;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-    font-size: 14px;
-    color: #1d1d1f;
-}
-
-.find-replace-btn:hover {
-    background: #f5f5f7;
-}
-
-/* 模態框樣式 */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal[style*="display: flex"] {
-    animation: fadeIn 0.2s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
+const converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+
+const API_KEY = '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';
+const WHISPER_MODEL = 'whisper-large-v3-turbo';
+const LLAMA_MODEL = 'llama-3.2-90b-text-preview';
+
+const dropArea = document.getElementById('drop-area');
+const fileInput = document.getElementById('fileInput');
+const uploadContainer = document.getElementById('upload-container');
+const processingContainer = document.getElementById('processing-container');
+const resultContainer = document.getElementById('result-container');
+const summaryText = document.getElementById('summary-text');
+const transcriptText = document.getElementById('transcript-text');
+const formatSelect = document.getElementById('format-select');
+const downloadLink = document.getElementById('downloadLink');
+const backLink = document.getElementById('backLink');
+
+dropArea.addEventListener('click', () => fileInput.click());
+dropArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropArea.classList.add('highlight');
+});
+dropArea.addEventListener('dragleave', () => dropArea.classList.remove('highlight'));
+dropArea.addEventListener('drop', handleDrop);
+fileInput.addEventListener('change', handleFileSelect);
+// formatSelect.addEventListener('change', updateTranscriptFormat);
+// languageSelect.addEventListener('change', translateTranscript);
+
+function handleDrop(e) {
+    e.preventDefault();
+    dropArea.classList.remove('highlight');
+    const file = e.dataTransfer.files[0];
+    if (!file) {
+        alert('請選擇檔案');
+        return;
     }
-    to {
-        opacity: 1;
+    
+    if (checkFileSize(file) && checkFileType(file)) {
+        processAudioFile(file);
     }
 }
 
-.modal-content {
-    background: white;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 800px;
-    height: 700px; /* 增加高度以容納 6 條字幕 */
-    display: flex;
-    flex-direction: column;
-    margin: 20px;
-    overflow: hidden;
-}
-
-.modal-header {
-    padding: 16px 24px;
-    border-bottom: 1px solid #e5e5e5;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0; /* 防止header被壓縮 */
-}
-
-.modal-header h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.modal-body {
-    flex: 1;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* 重要：確保內部滾動正常工作 */
-}
-
-.search-inputs {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-bottom: 24px;
-    padding: 0 20px;
-    flex-shrink: 0; /* 防止搜索框被壓縮 */
-}
-
-.input-group {
-    position: relative;
-    width: 100%;
-}
-
-.input-group input {
-    width: 100%;
-    padding: 8px 32px 8px 12px;
-    border: 1px solid #d1d1d6;
-    border-radius: 6px;
-    font-size: 14px;
-    box-sizing: border-box;
-}
-
-.clear-btn {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px;
-    color: #86868b;
-}
-
-.results-table {
-    flex: 1;
-    margin-bottom: 24px;
-    padding: 0 20px;
-    overflow-y: auto; /* 只有結果區域可以滾動 */
-}
-
-.results-table table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.results-table thead {
-    position: sticky;
-    top: 0;
-    background-color: white;
-    z-index: 1;
-    box-shadow: 0 1px 0 #e5e5e5;
-}
-
-.results-table tbody {
-    overflow-y: auto;
-}
-
-.results-table th,
-.results-table td {
-    padding: 16px 12px; /* 增加上下內邊距 */
-    text-align: left;
-    border-bottom: 1px solid #e5e5e5;
-    line-height: 1.5; /* 增加行高 */
-}
-
-.results-table th {
-    padding: 14px 12px; /* 增加上下內邊距 */
-    font-weight: 600;
-    color: #86868b;
-    font-size: 12px;
-}
-
-.modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #e5e5e5;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0; /* 防止footer被壓縮 */
-    background-color: white; /* 確保底部背景色 */
-}
-
-.results-count {
-    color: #86868b;
-    font-size: 14px;
-}
-
-.replace-btn {
-    padding: 8px 16px;
-    background: #1d1d1f;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.replace-btn:hover {
-    background: #2d2d2f;
-}
-
-.highlight {
-    background-color: #fef3c7;
-    padding: 2px;
-    border-radius: 2px;
-}
-
-/* 美化滾動條 */
-.results-table::-webkit-scrollbar {
-    width: 8px;
-}
-
-.results-table::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.results-table::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-}
-
-.results-table::-webkit-scrollbar-thumb:hover {
-    background: #a1a1a1;
-}
-
-.summary-actions {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    gap: 8px;
-}
-
-.icon-btn {
-    width: 32px;
-    height: 32px;
-    border: 1px solid rgba(226,226,226,1);
-    border-radius: 8px;
-    background: #F5F5F5;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.icon-btn:hover {
-    background: rgba(0,0,0,0.05);
-}
-
-.icon-btn .iconify {
-    font-size: 18px;
-    color: rgba(0,0,0,0.8);
-}
-
-/* 選單容器樣式 */
-.select-root {
-    position: relative;
-    z-index: 50; /* 確保下拉選單在其他元素之上 */
-}
-
-.select-trigger {
-    display: flex;
-    height: 35px;
-    width: 112px;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 12px;
-    background-color: #FFFFFF;
-    border: 1px solid rgba(226,226,226,1);
-    border-radius: 8px;
-    font-family: Inter, sans-serif;
-    font-size: 14px;
-    color: rgba(0,0,0,1);
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.select-trigger:hover {
-    background: rgba(0,0,0,0.05);
-}
-
-.select-value {
-    font-weight: 500;
-    margin-right: auto; /* 讓文字靠左 */
-}
-
-.select-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.5;
-    margin-left: 8px; /* 確保與文字有適當間距 */
-}
-
-.select-icon .iconify {
-    width: 16px;
-    height: 16px;
-}
-
-.select-content {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    margin-top: 8px;
-    width: 200px;
-    min-width: unset;
-    background: white;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    z-index: 101;
-}
-
-.select-content[hidden] {
-    display: none;
-}
-
-.select-viewport {
-    padding: 4px;
-}
-
-.select-item {
-    position: relative;
-    display: flex;
-    width: calc(100% - 8px);
-    align-items: center;
-    padding: 12px 16px 12px 24px;
-    border-radius: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    background: #FFFFFF;
-    margin: 2px 4px;
-    box-sizing: border-box;
-}
-
-.select-item:last-child {
-    margin-bottom: 0;
-}
-
-.select-item:hover {
-    background: #E2E2E2;
-}
-
-.select-item-indicator {
-    position: absolute;
-    left: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    visibility: hidden;
-}
-
-.select-item[aria-selected="true"] .select-item-indicator {
-    visibility: visible;
-}
-
-.select-item[aria-selected="false"] .select-item-indicator {
-    visibility: hidden;
-}
-
-.select-item-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-left: 4px;
-}
-
-.font-medium {
-    font-weight: 500;
-}
-
-.text-muted {
-    color: rgba(0, 0, 0, 0.5);
-    font-size: 12px;
-    margin-top: 2px;
-}
-
-@keyframes selectContentShow {
-    from {
-        opacity: 0;
-        transform: translateY(-8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (checkFileSize(file) && checkFileType(file)) {
+        processAudioFile(file);
     }
 }
 
-/* 修改查找按鈕樣式以保持一致 */
-.find-replace-btn {
-    width: 75px;
-    height: 35px;
-    background: #FFFFFF;
-    border: 1px solid rgba(226,226,226,1);
-    border-radius: 8px;
-    font-family: Inter, sans-serif;
-    font-size: 14px;
-    color: rgba(0,0,0,1);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    transition: all 0.3s ease;
-    padding: 0 12px;
+async function transcribeAudio(file, retryCount = 3, retryDelay = 5000) {
+    for (let i = 0; i < retryCount; i++) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('model', WHISPER_MODEL);
+            formData.append('response_format', 'verbose_json');
+
+            const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${API_KEY}`
+                },
+                body: formData
+            });
+
+            if (response.status === 429) {
+                console.log(`API 請求過於頻繁，等待 ${retryDelay/1000} 秒後重試...`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                continue;
+            }
+
+            if (!response.ok) {
+                throw new Error(`轉錄失敗: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            if (i === retryCount - 1) {
+                throw error;
+            }
+            console.log(`嘗試第 ${i + 1} 次失敗，等待後重試...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+    }
 }
 
-.find-replace-btn:hover {
-    background: rgba(0,0,0,0.05);
+async function generateSummary(text) {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${API_KEY}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            model: LLAMA_MODEL,
+            messages: [
+                { role: 'system', content: '請以心智圖筆記的方式，用繁體中文總結以下音檔內容。請精簡扼要地呈現重點，不需要很長的敘述。使用簡潔的條列式格式，突出主要概念和關鍵詞。' },
+                { role: 'user', content: text }
+            ]
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error('生成摘要失敗');
+    }
+
+    const data = await response.json();
+    return await converter(data.choices[0].message.content);
 }
 
-/* 添加摘要警告文字的樣式 */
-.summary-warning {
-    text-align: center;
-    color: #666;
-    font-size: 14px;
-    margin-top: calc(50vh - 65px - 35px/2);
-    white-space: nowrap;
+async function convertToTraditional(text) {
+    const converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+    return await converter(text);
+}
+
+// 添加全局變數來存儲轉錄數據
+let currentTranscriptData = null;
+
+// 修改 displayTranscript 函數
+function displayTranscript(transcriptData) {
+    currentTranscriptData = transcriptData;
+    const transcriptContainer = document.getElementById('transcript-text');
+    const currentValue = document.querySelector('.select-value')?.textContent || 'srt';
+    
+    if (currentValue === 'srt') {
+        displaySRTFormat(transcriptContainer, currentTranscriptData);
+    } else {
+        displayTXTFormat(transcriptContainer, currentTranscriptData);
+    }
+    
+    updateDownloadLink();
+}
+
+// SRT 格式顯示
+function displaySRTFormat(container, data) {
+    container.innerHTML = '';
+    
+    data.segments.forEach((segment, index) => {
+        const entry = document.createElement('div');
+        entry.className = 'transcript-entry';
+        entry.dataset.index = index;
+
+        const timeAndTextDiv = document.createElement('div');
+        timeAndTextDiv.className = 'transcript-content';
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'transcript-time';
+        timeSpan.textContent = `${formatSRTTime(segment.start)} --> ${formatSRTTime(segment.end)}`;
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'transcript-text';
+        textSpan.textContent = segment.text;
+        textSpan.onclick = () => makeEditable(textSpan, index);
+
+        timeAndTextDiv.appendChild(timeSpan);
+        timeAndTextDiv.appendChild(textSpan);
+        entry.appendChild(timeAndTextDiv);
+        container.appendChild(entry);
+    });
+}
+
+// TXT 格式顯示
+function displayTXTFormat(container, data) {
+    container.innerHTML = '';
+    
+    data.segments.forEach((segment, index) => {
+        const entry = document.createElement('div');
+        entry.className = 'transcript-entry';
+        entry.dataset.index = index;
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'transcript-text';
+        textDiv.textContent = segment.text;
+        textDiv.onclick = () => makeEditable(textDiv, index);
+
+        entry.appendChild(textDiv);
+        container.appendChild(entry);
+    });
+}
+
+// 使文字可編輯
+function makeEditable(element, index) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'transcript-input';
+    input.value = element.textContent;
+    
+    input.onblur = () => saveEdit(input, element, index);
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            input.blur();
+        } else if (e.key === 'Escape') {
+            element.parentNode.replaceChild(element, input);
+        }
+    };
+
+    element.parentNode.replaceChild(input, element);
+    input.focus();
+}
+
+// 保存編輯
+function saveEdit(input, originalElement, index) {
+    const newText = input.value.trim();
+    originalElement.textContent = newText;
+    
+    // 更新數據
+    currentTranscriptData.segments[index].text = newText;
+    
+    // 替換回原始元素
+    input.parentNode.replaceChild(originalElement, input);
+    
+    // 更新下載鏈接
+    updateDownloadLink();
+}
+
+// 修改 updateDownloadLink 函數
+function updateDownloadLink() {
+    const currentValue = document.querySelector('.select-value').textContent;
+    let content;
+    
+    if (currentValue === 'srt') {
+        content = currentTranscriptData.segments.map((segment, index) => {
+            return `${index + 1}\n${formatSRTTime(segment.start)} --> ${formatSRTTime(segment.end)}\n${segment.text}\n`;
+        }).join('\n');
+    } else {
+        content = currentTranscriptData.segments.map(segment => segment.text).join('\n');
+    }
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    downloadLink.href = url;
+    downloadLink.download = `transcript.${currentValue}`;
+}
+
+async function updateTranscript(transcript) {
+    // 假設 transcript 是一個包含轉錄文字的數組
+    const convertedTranscript = await Promise.all(transcript.map(async (item) => {
+        item.text = await converter(item.text);
+        return item;
+    }));
+
+    // 更 DOM
+    const transcriptContainer = document.getElementById('transcript-text');
+    transcriptContainer.innerHTML = '';
+    convertedTranscript.forEach(item => {
+        const p = document.createElement('p');
+        p.textContent = item.text;
+        transcriptContainer.appendChild(p);
+    });
+
+    // 如果有摘要，也進行轉換
+    if (summary) {
+        const convertedSummary = await converter(summary);
+        document.getElementById('summary-text').textContent = convertedSummary;
+    }
+}
+
+backLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    
+    // 隱藏結果和處理容器
+    resultContainer.style.display = 'none';
+    processingContainer.style.display = 'none';
+    
+    // 顯示上傳容器
+    uploadContainer.style.display = 'block';
+    
+    // 清空之前的結果
+    summaryText.textContent = '';
+    summaryText.style.display = 'none';  // 隱藏摘要文字區域
+    transcriptText.textContent = '';
+    
+    // 重置文件輸入
+    fileInput.value = '';
+    
+    // 重置生成摘要按鈕和操作按鈕
+    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+    const summaryActions = document.querySelector('.summary-actions');
+    
+    if (generateSummaryBtn) {
+        generateSummaryBtn.style.display = 'flex';  // 顯示生成摘要按鈕
+        generateSummaryBtn.disabled = false;  // 啟用按鈕
+        generateSummaryBtn.innerHTML = '<span class="iconify" data-icon="mingcute:magic-line"></span> 生成內容摘要';
+    }
+    
+    if (summaryActions) {
+        summaryActions.style.display = 'none';  // 隱藏操作按鈕
+    }
+    
+    // 重置全局變數
+    currentTranscriptData = null;
+});
+
+// 初始化音頻上下文
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+// 創建 Web Worker 用於 MP3 轉換
+const workerBlob = new Blob([`
+    importScripts('https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js');
+    
+    self.onmessage = function(e) {
+        const { audioData, sampleRate, channels } = e.data;
+        const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, 96);
+        const mp3Data = [];
+        
+        const samples = audioData[0].length;
+        const blockSize = 1152;
+        
+        for (let i = 0; i < samples; i += blockSize) {
+            const left = audioData[0].slice(i, i + blockSize);
+            const right = channels > 1 ? audioData[1].slice(i, i + blockSize) : left;
+            
+            const leftInt = new Int16Array(left.map(x => Math.max(-32768, Math.min(32767, x * 32768))));
+            const rightInt = new Int16Array(right.map(x => Math.max(-32768, Math.min(32767, x * 32768))));
+            
+            const mp3buf = mp3encoder.encodeBuffer(leftInt, rightInt);
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+        }
+        
+        const end = mp3encoder.flush();
+        if (end.length > 0) {
+            mp3Data.push(end);
+        }
+        
+        self.postMessage({
+            type: 'complete',
+            data: mp3Data
+        });
+    };
+`], { type: 'application/javascript' });
+
+const workerUrl = URL.createObjectURL(workerBlob);
+
+// 修改處理文件的主要函數
+async function processAudioFile(file) {
+    uploadContainer.style.display = 'none';
+    processingContainer.style.display = 'block';
+
+    try {
+        let audioFile = file;
+        let allTranscriptionData = { segments: [] };
+        let timeOffset = 0;
+        
+        if (file.type.startsWith('video/')) {
+            updateProgress(0, '正在從影片中提取音頻...');
+            const audioBuffer = await extractAudio(file);
+            updateProgress(20, '正在分割音頻...');
+            
+            const chunks = await splitAudioBuffer(audioBuffer);
+            let totalProgress = 20;
+            const progressPerChunk = 70 / chunks.length;
+            
+            // 處理每個分割並添加延遲
+            for (let i = 0; i < chunks.length; i++) {
+                updateProgress(totalProgress, `正在處理第 ${i + 1}/${chunks.length} 段音頻...`);
+                const mp3Blob = await convertToMp3(chunks[i]);
+                const chunkFile = new File([mp3Blob], `chunk_${i}.mp3`, { type: 'audio/mp3' });
+                
+                // 如果不是第一個片段，添加延遲
+                if (i > 0) {
+                    updateProgress(totalProgress, `等待 API 冷卻中...`);
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                }
+                
+                const transcriptionData = await transcribeAudio(chunkFile);
+                
+                transcriptionData.segments = transcriptionData.segments.map(segment => ({
+                    ...segment,
+                    start: segment.start + timeOffset,
+                    end: segment.end + timeOffset
+                }));
+                
+                allTranscriptionData.segments.push(...transcriptionData.segments);
+                timeOffset += 1800;
+                totalProgress += progressPerChunk;
+            }
+        } else {
+            // 處理音頻文件
+            const audioBuffer = await extractAudio(file);
+            const chunks = await splitAudioBuffer(audioBuffer);
+            let totalProgress = 20;
+            const progressPerChunk = 70 / chunks.length;
+            
+            for (let i = 0; i < chunks.length; i++) {
+                updateProgress(totalProgress, `正在處理第 ${i + 1}/${chunks.length} 段音頻...`);
+                const mp3Blob = await convertToMp3(chunks[i]);
+                const chunkFile = new File([mp3Blob], `chunk_${i}.mp3`, { type: 'audio/mp3' });
+                
+                // 如果不是第一個片段，添加延遲
+                if (i > 0) {
+                    updateProgress(totalProgress, `等待 API 冷卻中...`);
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                }
+                
+                const transcriptionData = await transcribeAudio(chunkFile);
+                
+                transcriptionData.segments = transcriptionData.segments.map(segment => ({
+                    ...segment,
+                    start: segment.start + timeOffset,
+                    end: segment.end + timeOffset
+                }));
+                
+                allTranscriptionData.segments.push(...transcriptionData.segments);
+                timeOffset += 1800;
+                totalProgress += progressPerChunk;
+            }
+        }
+
+        // 確保時間戳按順序排序
+        allTranscriptionData.segments.sort((a, b) => a.start - b.start);
+
+        // 轉換為繁體中文
+        allTranscriptionData.segments = await Promise.all(
+            allTranscriptionData.segments.map(async (segment) => {
+                segment.text = await converter(segment.text);
+                return segment;
+            })
+        );
+
+        displayTranscript(allTranscriptionData);
+        checkAndUpdateSummaryButton(allTranscriptionData);
+
+        updateProgress(100, '處理完成！');
+        setTimeout(() => {
+            uploadContainer.style.display = 'none';
+            processingContainer.style.display = 'none';
+            resultContainer.style.display = 'block';
+        }, 500);
+
+        updateDownloadLink();
+    } catch (error) {
+        console.error('處理文件時出錯:', error);
+        alert('處理文件時出錯: ' + error.message);
+        uploadContainer.style.display = 'block';
+        processingContainer.style.display = 'none';
+    }
+}
+
+// 從文件中提取音頻
+async function extractAudio(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const arrayBuffer = e.target.result;
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                resolve(audioBuffer);
+            } catch (error) {
+                reject(new Error('無法提取音頻，請確保文件格式正確'));
+            }
+        };
+        reader.onerror = () => reject(new Error('讀取文件失敗'));
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+// 將 AudioBuffer 轉換為 MP3
+async function convertToMp3(audioBuffer) {
+    return new Promise((resolve, reject) => {
+        try {
+            const worker = new Worker(workerUrl);
+            const channels = audioBuffer.numberOfChannels;
+            const audioData = [];
+            
+            for (let i = 0; i < channels; i++) {
+                audioData.push(audioBuffer.getChannelData(i));
+            }
+            
+            worker.onmessage = function(e) {
+                if (e.data.type === 'progress') {
+                    // 更新 MP3 轉換進度（30-50%之間）
+                    const progress = 30 + (e.data.progress * 0.2);
+                    updateProgress(progress, '正在轉換為 MP3...');
+                } else if (e.data.type === 'complete') {
+                    const blob = new Blob(e.data.data, { type: 'audio/mp3' });
+                    worker.terminate();
+                    resolve(blob);
+                }
+            };
+            
+            worker.onerror = function(error) {
+                worker.terminate();
+                reject(new Error('轉換 MP3 失敗'));
+            };
+            
+            worker.postMessage({
+                audioData: audioData,
+                sampleRate: audioBuffer.sampleRate,
+                channels: channels
+            });
+            
+        } catch (error) {
+            reject(new Error('轉換 MP3 時發生錯誤'));
+        }
+    });
+}
+
+// 修改進度顯示相關函數
+function updateProgress(progress, message) {
+    const progressBar = document.querySelector('#progress');
+    const progressText = document.querySelector('#processing-container .upload-text');
+    const progressPercent = document.querySelector('#progress-percent');
+    
+    if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+    }
+    if (progressText) {
+        progressText.textContent = message;
+    }
+    if (progressPercent) {
+        progressPercent.textContent = `${Math.round(progress)}%`;
+    }
+}
+
+// 檢查文件大小
+function checkFileSize(file) {
+    const maxSize = 300 * 1024 * 1024; // 300MB
+    if (file.size > maxSize) {
+        alert('文件大小不能超過 300MB');
+        return false;
+    }
+    return true;
+}
+
+// 檢查文件類型
+function checkFileType(file) {
+    const validTypes = [
+        // 視頻格式
+        'video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska',
+        // 音頻格式
+        'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/aac', 
+        'audio/mp4', 'audio/x-m4a', 'audio/flac', 'audio/x-ms-wma'
+    ];
+    
+    // 檢查文件擴展名
+    const validExtensions = [
+        '.mp4', '.mov', '.webm', '.mkv', 
+        '.mp3', '.wav', '.ogg', '.aac', 
+        '.m4a', '.flac', '.wma'
+    ];
+    
+    const fileName = file.name.toLowerCase();
+    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    
+    if (!validTypes.includes(file.type) && !hasValidExtension) {
+        alert('不支援的文件格式。\n支援的格式：MP4, MOV, WebM, MKV, MP3, WAV, OGG, AAC, M4A, FLAC, WMA');
+        return false;
+    }
+    return true;
+}
+
+// 更新事件監聽器
+dropArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropArea.classList.add('highlight');
+});
+
+dropArea.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropArea.classList.remove('highlight');
+});
+
+dropArea.addEventListener('drop', handleDrop);
+
+// 添加 formatSRTTime 函數
+function formatSRTTime(seconds) {
+    const date = new Date(seconds * 1000);
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    const secs = date.getUTCSeconds().toString().padStart(2, '0');
+    const ms = date.getUTCMilliseconds().toString().padStart(3, '0');
+    return `${hours}:${minutes}:${secs},${ms}`;
+}
+
+// 添加 formatTime 函數（用於一般時間格式）
+function formatTime(seconds) {
+    const date = new Date(seconds * 1000);
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    const secs = date.getUTCSeconds().toString().padStart(2, '0');
+    return `${hours}:${minutes}:${secs}`;
+}
+
+// 添加一個轉義特殊字符的函數
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// 修改 updateSearchResults 函數
+function updateSearchResults() {
+    const searchInput = document.getElementById('searchInput');
+    const replaceInput = document.getElementById('replaceInput');
+    const searchResults = document.getElementById('searchResults');
+    const resultCount = document.getElementById('resultCount');
+    
+    const searchTerm = searchInput.value;
+    const replaceTerm = replaceInput.value;
+    searchResults.innerHTML = '';
+    let count = 0;
+
+    if (!searchTerm) {
+        resultCount.textContent = '0';
+        return;
+    }
+
+    if (!currentTranscriptData || !currentTranscriptData.segments) {
+        return;
+    }
+
+    // 使用轉義後的搜索詞創建正則表達式
+    const searchRegex = new RegExp(escapeRegExp(searchTerm), 'g');
+
+    currentTranscriptData.segments.forEach((segment, index) => {
+        if (segment.text.includes(searchTerm)) {
+            count++;
+            const row = document.createElement('tr');
+            
+            // 時間列
+            const timeCell = document.createElement('td');
+            timeCell.textContent = formatSRTTime(segment.start);
+            
+            // 原文列
+            const originalCell = document.createElement('td');
+            originalCell.innerHTML = segment.text.replace(
+                searchRegex,
+                `<span class="highlight">${searchTerm}</span>`
+            );
+            
+            // 結果列
+            const resultCell = document.createElement('td');
+            if (replaceTerm === '') {
+                // 如果替換文字為空，顯示刪除效果
+                resultCell.innerHTML = segment.text.replace(
+                    searchRegex,
+                    '<span style="color: #ff4444; text-decoration: line-through;">' + searchTerm + '</span>'
+                );
+            } else {
+                // 如果有替換文字，顯示替換效果
+                resultCell.innerHTML = segment.text.replace(
+                    searchRegex,
+                    '<span style="color: #22c55e;">' + replaceTerm + '</span>'
+                );
+            }
+            
+            // 狀態列
+            const statusCell = document.createElement('td');
+            if (searchTerm && segment.text.includes(searchTerm)) {
+                const checkIcon = document.createElement('span');
+                checkIcon.className = 'iconify';
+                checkIcon.setAttribute('data-icon', 'mingcute:check-line');
+                checkIcon.style.color = '#22c55e';
+                statusCell.appendChild(checkIcon);
+            }
+            
+            row.appendChild(timeCell);
+            row.appendChild(originalCell);
+            row.appendChild(resultCell);
+            row.appendChild(statusCell);
+            searchResults.appendChild(row);
+        }
+    });
+
+    resultCount.textContent = count;
+}
+
+// 將查找替換相關的初始化代碼移到 DOMContentLoaded 事件中
+document.addEventListener('DOMContentLoaded', () => {
+    // 初始化選單
+    initializeSelect();
+    
+    // 原有的初始化代碼...
+
+    // 查找替換相關的變數和函數
+    const findReplaceBtn = document.getElementById('findReplaceBtn');
+    const findReplaceModal = document.getElementById('findReplaceModal');
+    const searchInput = document.getElementById('searchInput');
+    const replaceInput = document.getElementById('replaceInput');
+    const searchResults = document.getElementById('searchResults');
+    const resultCount = document.getElementById('resultCount');
+    const replaceAllBtn = document.getElementById('replaceAllBtn');
+    const closeBtn = document.querySelector('.close-btn');
+
+    // 打開查找替換對話框
+    findReplaceBtn.addEventListener('click', (e) => {
+        e.preventDefault(); // 添加這行防止默認行為
+        findReplaceModal.style.display = 'flex';
+        searchInput.focus();
+        updateSearchResults();
+    });
+
+    // 關閉對話框
+    closeBtn.addEventListener('click', () => {
+        findReplaceModal.style.display = 'none';
+    });
+
+    // 點擊對話框外部關
+    findReplaceModal.addEventListener('click', (e) => {
+        if (e.target === findReplaceModal) {
+            findReplaceModal.style.display = 'none';
+        }
+    });
+
+    // 清除按鈕功能
+    document.querySelectorAll('.clear-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = btn.previousElementSibling;
+            input.value = '';
+            input.focus();
+            updateSearchResults();
+        });
+    });
+
+    // 搜索輸入更新
+    searchInput.addEventListener('input', updateSearchResults);
+    replaceInput.addEventListener('input', updateSearchResults);
+
+    // 替換按鈕功能
+    replaceAllBtn.addEventListener('click', () => {
+        const searchTerm = document.getElementById('searchInput').value;
+        const replaceTerm = document.getElementById('replaceInput').value;
+
+        if (!searchTerm) return;
+
+        // 使用轉義後的搜索詞創建正則表達式
+        const searchRegex = new RegExp(escapeRegExp(searchTerm), 'g');
+
+        // 執行替換
+        currentTranscriptData.segments = currentTranscriptData.segments.map(segment => ({
+            ...segment,
+            text: segment.text.replace(searchRegex, replaceTerm || '')
+        }));
+
+        // 更新顯示
+        displayTranscript(currentTranscriptData);
+        
+        // 關閉模態框
+        document.getElementById('findReplaceModal').style.display = 'none';
+        
+        // 清空輸入框
+        document.getElementById('searchInput').value = '';
+        document.getElementById('replaceInput').value = '';
+        
+        // 更新下載鏈接
+        updateDownloadLink();
+    });
+
+    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+    const summaryText = document.getElementById('summary-text');
+    const summaryActions = document.querySelector('.summary-actions');
+    const regenerateSummaryBtn = document.getElementById('regenerateSummaryBtn');
+    const copySummaryBtn = document.getElementById('copySummaryBtn');
+
+    // 生成摘要的函數
+    async function generateSummaryContent() {
+        if (!currentTranscriptData || !currentTranscriptData.segments) {
+            alert('請先上傳並轉錄音頻文件');
+            return;
+        }
+
+        try {
+            generateSummaryBtn.disabled = true;
+            generateSummaryBtn.innerHTML = '<span class="iconify" data-icon="mingcute:loading-line"></span> 正在生成摘要...';
+
+            const transcriptText = currentTranscriptData.segments.map(segment => segment.text).join(' ');
+            const summary = await generateSummary(transcriptText);
+            
+            summaryText.style.display = 'block';
+            summaryText.innerHTML = summary.replace(/\n/g, '<br>');
+            generateSummaryBtn.style.display = 'none';
+            summaryActions.style.display = 'flex'; // 顯示操作按鈕
+        } catch (error) {
+            console.error('生成摘要時出錯:', error);
+            alert('生成摘要失敗: ' + error.message);
+            generateSummaryBtn.disabled = false;
+            generateSummaryBtn.innerHTML = '<span class="iconify" data-icon="mingcute:magic-line"></span> 生成內容摘要';
+        }
+    }
+
+    // 初始生成摘要
+    generateSummaryBtn.addEventListener('click', generateSummaryContent);
+
+    // 重新生成摘要
+    regenerateSummaryBtn.addEventListener('click', async () => {
+        summaryText.style.display = 'none';
+        await generateSummaryContent();
+    });
+
+    // 複製摘要內容
+    copySummaryBtn.addEventListener('click', async () => {
+        try {
+            const summaryContent = summaryText.innerText;
+            await navigator.clipboard.writeText(summaryContent);
+            
+            // 顯示複製成功的視覺反饋
+            const originalIcon = copySummaryBtn.innerHTML;
+            copySummaryBtn.innerHTML = '<span class="iconify" data-icon="mingcute:check-line"></span>';
+            copySummaryBtn.style.color = '#22c55e';
+            
+            setTimeout(() => {
+                copySummaryBtn.innerHTML = originalIcon;
+                copySummaryBtn.style.color = '';
+            }, 2000);
+        } catch (error) {
+            console.error('複製失敗:', error);
+            alert('複製失敗，請手動複製');
+        }
+    });
+});
+
+// 將 initializeSelect 函數移到外部
+function initializeSelect() {
+    const trigger = document.querySelector('.select-trigger');
+    const content = document.querySelector('.select-content');
+    const items = document.querySelectorAll('.select-item');
+    const valueSpan = document.querySelector('.select-value');
+    
+    if (!trigger || !content || !items.length || !valueSpan) {
+        console.warn('Select elements not found');
+        return;
+    }
+    
+    let currentValue = 'srt';
+
+    // 設置初始狀態
+    items.forEach(item => {
+        const isSrt = item.dataset.value === 'srt';
+        item.setAttribute('aria-selected', isSrt ? 'true' : 'false');
+    });
+
+    trigger.addEventListener('click', () => {
+        const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+        trigger.setAttribute('aria-expanded', !isExpanded);
+        content.hidden = isExpanded;
+    });
+
+    items.forEach(item => {
+        item.addEventListener('click', () => {
+            const value = item.dataset.value;
+            currentValue = value;
+            valueSpan.textContent = value;
+            
+            // 新選中狀態
+            items.forEach(i => {
+                i.setAttribute('aria-selected', i === item);
+            });
+            
+            // 關閉選單
+            trigger.setAttribute('aria-expanded', 'false');
+            content.hidden = true;
+            
+            // 更新轉錄顯示格式
+            if (currentTranscriptData) {
+                displayTranscript(currentTranscriptData);
+            }
+            
+            // 更新下載鏈接
+            updateDownloadLink();
+        });
+    });
+
+    // 點擊外部關閉選單
+    document.addEventListener('click', (e) => {
+        if (!trigger.contains(e.target) && !content.contains(e.target)) {
+            trigger.setAttribute('aria-expanded', 'false');
+            content.hidden = true;
+        }
+    });
+}
+
+// 添加音頻分割函數
+async function splitAudioBuffer(audioBuffer) {
+    const chunkDuration = 30 * 60; // 30分鐘
+    const sampleRate = audioBuffer.sampleRate;
+    const samplesPerChunk = chunkDuration * sampleRate;
+    const numberOfChannels = audioBuffer.numberOfChannels;
+    const chunks = [];
+
+    for (let offset = 0; offset < audioBuffer.length; offset += samplesPerChunk) {
+        const chunkLength = Math.min(samplesPerChunk, audioBuffer.length - offset);
+        const chunk = new AudioBuffer({
+            length: chunkLength,
+            numberOfChannels,
+            sampleRate
+        });
+
+        for (let channel = 0; channel < numberOfChannels; channel++) {
+            const channelData = audioBuffer.getChannelData(channel);
+            const chunkData = channelData.slice(offset, offset + chunkLength);
+            chunk.copyToChannel(chunkData, channel);
+        }
+
+        chunks.push(chunk);
+    }
+
+    return chunks;
+}
+
+// 添加檢查文字長度並更新摘要按鈕的函數
+function checkAndUpdateSummaryButton(transcriptData) {
+    const summaryContainer = document.getElementById('summary-container');
+    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+    
+    // 計算總字元數
+    const totalText = transcriptData.segments.map(segment => segment.text).join('');
+    const charCount = totalText.length;
+    
+    if (charCount > 7000) {
+        // 移除生成摘要按鈕
+        if (generateSummaryBtn) {
+            generateSummaryBtn.remove();
+        }
+        
+        // 創建提示文字
+        const warningText = document.createElement('div');
+        warningText.className = 'summary-warning';
+        warningText.textContent = '內容超過7,000字元，請轉至ChatGPT生成摘要。';
+        warningText.style.cssText = `
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: calc(50vh - 65px - 35px/2);
+            white-space: nowrap;
+        `;
+        
+        // 插入提示文字
+        summaryContainer.appendChild(warningText);
+    }
 }
