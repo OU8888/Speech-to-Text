@@ -964,3 +964,13 @@ select {
     margin-top: calc(50vh - 65px - 35px/2);
     white-space: nowrap;
 }
+
+#summary-text strong {
+    font-weight: 600;
+    color: #000;
+}
+
+#summary-text {
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
