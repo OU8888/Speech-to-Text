@@ -2,7 +2,7 @@ const converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
 
 const API_KEY = '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';
 const WHISPER_MODEL = 'whisper-large-v3-turbo';
-const LLAMA_MODEL = 'llama-3.2-90b-text-preview';
+const LLAMA_MODEL = 'llama-3.1-8b-instant';
 
 const dropArea = document.getElementById('drop-area');
 const fileInput = document.getElementById('fileInput');
@@ -97,7 +97,30 @@ async function generateSummary(text) {
         body: JSON.stringify({
             model: LLAMA_MODEL,
             messages: [
-                { role: 'system', content: '請以心智圖筆記的方式，用繁體中文總結以下音檔內容。請精簡扼要地呈現重點，不需要很長的敘述。使用簡潔的條列式格式，突出主要概念和關鍵詞。' },
+                { 
+                    role: 'system', 
+                    content: `請幫我使用心智圖方式做摘要總結，以「數字」為各個主要主題，細項以「・」顯示，請以繁體中文回覆。
+
+請務必使用 Markdown 語法來標示重點：
+- 所有主要主題必須用粗體：**主題**
+- 重要關鍵字或特別提到的字句必須用粗體：**關鍵字**
+- 使用縮排來表示層級關係
+
+輸出格式範例：
+
+1. **中心主題**
+   ・**重要關鍵字1**
+   ・一般描述
+      ・**特別強調的內容**
+      ・一般子項目
+
+2. **次要主題**
+   ・**關鍵描述**
+   ・一般描述
+      ・**重點內容**
+
+請確保所有主題和重要內容都使用 **粗體** 標記，以提高可讀性。` 
+                },
                 { role: 'user', content: text }
             ]
         })
@@ -548,7 +571,7 @@ function checkFileType(file) {
     const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
     
     if (!validTypes.includes(file.type) && !hasValidExtension) {
-        alert('不支援的文件格式。\n支援的格式：MP4, MOV, WebM, MKV, MP3, WAV, OGG, AAC, M4A, FLAC, WMA');
+        alert('不支援的文格式。\n支的格式：MP4, MOV, WebM, MKV, MP3, WAV, OGG, AAC, M4A, FLAC, WMA');
         return false;
     }
     return true;
@@ -771,10 +794,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const transcriptText = currentTranscriptData.segments.map(segment => segment.text).join(' ');
             const summary = await generateSummary(transcriptText);
             
-            summaryText.style.display = 'block';
-            summaryText.innerHTML = summary.replace(/\n/g, '<br>');
+            // 使用新的顯示函數
+            displaySummary(summary);
+            
             generateSummaryBtn.style.display = 'none';
-            summaryActions.style.display = 'flex'; // 顯示操作按鈕
+            summaryActions.style.display = 'flex';
         } catch (error) {
             console.error('生成摘要時出錯:', error);
             alert('生成摘要失敗: ' + error.message);
@@ -911,7 +935,7 @@ function checkAndUpdateSummaryButton(transcriptData) {
     const totalText = transcriptData.segments.map(segment => segment.text).join('');
     const charCount = totalText.length;
     
-    if (charCount > 7000) {
+    if (charCount > 20000) {
         // 移除生成摘要按鈕
         if (generateSummaryBtn) {
             generateSummaryBtn.remove();
@@ -920,7 +944,7 @@ function checkAndUpdateSummaryButton(transcriptData) {
         // 創建提示文字
         const warningText = document.createElement('div');
         warningText.className = 'summary-warning';
-        warningText.textContent = '內容超過7,000字元，請轉至ChatGPT生成摘要。';
+        warningText.textContent = '內容超過20,000字元，請轉至ChatGPT生成摘要。';
         warningText.style.cssText = `
             text-align: center;
             color: #666;
@@ -932,4 +956,17 @@ function checkAndUpdateSummaryButton(transcriptData) {
         // 插入提示文字
         summaryContainer.appendChild(warningText);
     }
+}
+
+// 在生成摘要的函數中添加 Markdown 轉換
+function displaySummary(summaryText) {
+    const summaryContainer = document.getElementById('summary-text');
+    
+    // 將 Markdown 的粗體語法轉換為 HTML
+    const htmlContent = summaryText
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+    
+    summaryContainer.innerHTML = htmlContent;
+    summaryContainer.style.display = 'block';
 }
