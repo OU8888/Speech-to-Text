@@ -806,24 +806,37 @@ select {
 }
 
 .icon-btn {
-    background: transparent;
-    border: none;
+    background: #FFFFFF;
+    border: 1px solid rgba(226,226,226,1);
+    border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 4px;
-    border-radius: 4px;
+    gap: 4px;
+    padding: 4px 12px;
     transition: all 0.2s ease;
 }
 
 .icon-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(0,0,0,0.05);
 }
 
 .icon-btn .iconify {
     font-size: 15px;
     color: rgba(0, 0, 0, 0.8);
+}
+
+/* 摘要區域按鈕特殊樣式 */
+.summary-actions .icon-btn {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.summary-actions .icon-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 /* 選單容器樣式 */
