@@ -17,11 +17,79 @@
         <div id="upload-container">
             <div id="drop-area">
                 <div class="upload-content">
-                    <i class="ri-file-upload-fill upload-icon"></i>
-                    <p class="upload-text">點擊或拖曳上傳檔案</p>
+                    <h1 class="title">
+                        <span>S</span>
+                        <span>p</span>
+                        <span>e</span>
+                        <span>e</span>
+                        <span>c</span>
+                        <span>h</span>
+                        <span>&nbsp;</span>
+                        <span>T</span>
+                        <span>o</span>
+                        <span>&nbsp;</span>
+                        <span>T</span>
+                        <span>e</span>
+                        <span>x</span>
+                        <span>t</span>
+                    </h1>
                 </div>
-                <p class="file-types">(限制300MB max) 支援: MP4, MOV, WebM, MKV, MP3, WAV, OGG, AAC, M4A, FLAC, WMA</p>
+                <p class="upload-text">點擊或拖曳上傳檔案</p>
                 <input type="file" id="fileInput" accept="audio/*,video/*" style="display: none;">
+            </div>
+        </div>
+
+        <!-- 新增轉換確認頁面 -->
+        <div id="confirm-container" style="display: none;">
+            <div class="confirm-content">
+                <div class="file-info">
+                    <h2>準備轉換</h2>
+                    <p id="selected-filename">已選擇檔案：<span></span></p>
+                </div>
+                <div class="frequent-words">
+                    <div class="frequent-words-header">
+                        <h3>高頻詞設定</h3>
+                        <button id="addWordsBtn" class="icon-btn">
+                            <span class="iconify" data-icon="ri:add-line"></span>
+                            新增
+                        </button>
+                    </div>
+                    <p class="frequent-words-description">用戶可自定義高頻詞替換，將錯誤文字自動修正為正確內容，提升轉錄準確性。</p>
+                    <div id="words-list" class="words-list">
+                        <!-- 高頻詞會動態添加在這裡 -->
+                    </div>
+                </div>
+                <div class="confirm-actions">
+                    <button id="backToUploadBtn" class="secondary-btn">
+                        <span class="iconify" data-icon="ri:arrow-left-line"></span>
+                        返回
+                    </button>
+                    <button id="startConversionBtn" class="primary-btn">
+                        <span class="iconify" data-icon="ri:file-transfer-line"></span>
+                        開始轉換
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增高頻詞對話框 -->
+        <div id="words-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>新增高頻詞</h2>
+                    <button class="close-btn">
+                        <span class="iconify" data-icon="mingcute:close-line"></span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <label for="wordsInput">請輸入高頻詞（用逗號隔開）：</label>
+                        <textarea id="wordsInput" placeholder="例如：三得利,機器學習,深度學習"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="confirmWordsBtn" class="primary-btn">確認</button>
+                </div>
             </div>
         </div>
 
@@ -39,9 +107,15 @@
 
         <div id="result-container" style="display: none;">
             <div id="top-bar">
-                <a href="#" id="backLink" class="back-btn" aria-label="返回上傳頁面">
-                    <span class="iconify" data-icon="mingcute:arrow-left-line"></span>
-                </a>
+                <div class="nav-left">
+                    <a href="#" id="backLink" class="back-btn" aria-label="返回上傳頁面">
+                        <span class="iconify" data-icon="mingcute:arrow-left-line"></span>
+                    </a>
+                    <div class="filename-container">
+                        <span id="filename-display" class="filename-text"></span>
+                        <input type="text" id="filename-input" class="filename-input" style="display: none;">
+                    </div>
+                </div>
                 <a href="#" id="downloadLink" class="download-btn" aria-label="下載檔案">
                     <span class="iconify" data-icon="lucide:download"></span>
                 </a>
@@ -109,13 +183,14 @@
         </div>
     </main>
     <script src="script.js"></script>
+    <script src="matrixRain.js"></script>
 
     <!-- 添加查找替換對話框 -->
-    <div id="findReplaceModal" class="modal" style="display: none;">
+    <div id="findReplaceModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>查找關鍵詞</h2>
-                <button class="close-btn">
+                <button class="close-btn" id="findReplaceCloseBtn">
                     <span class="iconify" data-icon="mingcute:close-line"></span>
                 </button>
             </div>
