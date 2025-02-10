@@ -285,10 +285,25 @@ function displaySRTFormat(container, data) {
             deleteSegment(index);
         };
 
+        // 添加新行區域
+        const addLineZone = document.createElement('div');
+        addLineZone.className = 'add-line-zone';
+        
+        const addButton = document.createElement('button');
+        addButton.className = 'add-line-button';
+        addButton.innerHTML = '<span class="iconify" data-icon="mingcute:add-line"></span>';
+        addButton.onclick = (e) => {
+            e.stopPropagation();
+            addNewLine(index);
+        };
+        
+        addLineZone.appendChild(addButton);
+
         timeAndTextDiv.appendChild(timeSpan);
         timeAndTextDiv.appendChild(textSpan);
         timeAndTextDiv.appendChild(deleteBtn);
         entry.appendChild(timeAndTextDiv);
+        entry.appendChild(addLineZone);
         container.appendChild(entry);
     });
 }
@@ -477,36 +492,25 @@ function saveEdit(input, originalElement, index) {
 
 // 修改 updateDownloadLink 函數
 function updateDownloadLink() {
-    const downloadLink = document.getElementById('downloadLink');
     const filenameDisplay = document.getElementById('filename-display');
-    const currentValue = document.querySelector('.select-value')?.textContent || 'srt';
     const filename = filenameDisplay.textContent || 'transcript';
     
-    let content = '';
-    let extension = '';
-    
-    if (currentValue === 'srt') {
-        content = currentTranscriptData.segments.map((segment, index) => {
-            return `${index + 1}\n${formatSRTTime(segment.start)} --> ${formatSRTTime(segment.end)}\n${segment.text}\n`;
-        }).join('\n');
-        extension = 'srt';
-    } else {
-        content = currentTranscriptData.segments.map(segment => segment.text).join('\n');
-        extension = 'txt';
-    }
-    
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    
-    downloadLink.href = url;
-    downloadLink.download = `${filename}.${extension}`;
-    
-    // 清理之前的 URL
-    const oldUrl = downloadLink.dataset.url;
-    if (oldUrl) {
-        URL.revokeObjectURL(oldUrl);
-    }
-    downloadLink.dataset.url = url;
+    // 更新下載選單項目的數據
+    document.querySelectorAll('.download-item').forEach(item => {
+        const format = item.dataset.format;
+        const content = generateDownloadContent(format);
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        
+        // 清理之前的 URL
+        if (item.dataset.url) {
+            URL.revokeObjectURL(item.dataset.url);
+        }
+        
+        item.href = url;
+        item.dataset.url = url;
+        item.download = `${filename}.${format}`;
+    });
 }
 
 async function updateTranscript(transcript) {
@@ -1512,4 +1516,114 @@ function setInitialFilename(file) {
             updateDownloadLink();
         }
     }
+}
+
+// 修改下載相關的函數
+function generateDownloadContent(format) {
+    if (!currentTranscriptData || !currentTranscriptData.segments) {
+        return '';
+    }
+
+    if (format === 'srt') {
+        return currentTranscriptData.segments.map((segment, index) => {
+            return `${index + 1}\n${formatSRTTime(segment.start)} --> ${formatSRTTime(segment.end)}\n${segment.text}\n`;
+        }).join('\n');
+    } else if (format === 'txt') {
+        return currentTranscriptData.segments.map(segment => segment.text).join('\n');
+    }
+    
+    return '';
+}
+
+// 設置下載事件監聽器
+document.addEventListener('DOMContentLoaded', () => {
+    // 下載按鈕點擊事件
+    const downloadBtn = document.querySelector('.download-dropdown .back-btn');
+    const downloadMenu = document.querySelector('.download-menu');
+    
+    // 點擊按鈕切換選單顯示
+    downloadBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        downloadMenu.classList.toggle('show');
+        downloadBtn.setAttribute('aria-expanded', downloadMenu.classList.contains('show'));
+    });
+    
+    // 點擊其他地方關閉選單
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.download-dropdown')) {
+            downloadMenu.classList.remove('show');
+            downloadBtn.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    // 下載選單項目點擊事件
+    document.querySelectorAll('.download-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const format = item.dataset.format;
+            const content = generateDownloadContent(format);
+            const filename = document.getElementById('filename-display').textContent || 'transcript';
+            
+            // 創建下載
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${filename}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // 下載後關閉選單
+            downloadMenu.classList.remove('show');
+            downloadBtn.setAttribute('aria-expanded', 'false');
+        });
+    });
+});
+
+// 添加新行的函數
+function addNewLine(index) {
+    if (!currentTranscriptData || !currentTranscriptData.segments) return;
+    
+    const currentSegment = currentTranscriptData.segments[index];
+    const nextSegment = currentTranscriptData.segments[index + 1];
+    
+    // 計算新行的開始和結束時間
+    let newStart, newEnd;
+    if (nextSegment) {
+        // 如果有下一行，取當前行和下一行的中間時間點
+        newStart = currentSegment.end;
+        newEnd = nextSegment.start;
+    } else {
+        // 如果是最後一行，在當前行結束時間後加 3 秒
+        newStart = currentSegment.end;
+        newEnd = newStart + 3;
+    }
+    
+    // 創建新的段落
+    const newSegment = {
+        text: '',
+        start: newStart,
+        end: newEnd
+    };
+    
+    // 插入新段落
+    currentTranscriptData.segments.splice(index + 1, 0, newSegment);
+    
+    // 更新顯示
+    displayTranscript(currentTranscriptData);
+    
+    // 自動聚焦到新行的文字區域
+    setTimeout(() => {
+        const newEntry = document.querySelector(`.transcript-entry[data-index="${index + 1}"] .transcript-text`);
+        if (newEntry) {
+            makeEditable(newEntry, index + 1);
+        }
+    }, 0);
+    
+    // 更新下載鏈接
+    updateDownloadLink();
 }
