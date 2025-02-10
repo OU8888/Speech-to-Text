@@ -116,9 +116,21 @@
                         <input type="text" id="filename-input" class="filename-input" style="display: none;">
                     </div>
                 </div>
-                <a href="#" id="downloadLink" class="download-btn" aria-label="下載檔案">
-                    <span class="iconify" data-icon="lucide:download"></span>
-                </a>
+                <div class="download-dropdown">
+                    <a href="#" class="back-btn" aria-label="下載選項" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa-solid fa-download"></i>
+                    </a>
+                    <div class="download-menu">
+                        <a href="#" class="download-item" data-format="srt">
+                            <span class="download-item-text">字幕</span>
+                            <span class="download-item-desc">SubRip (.srt)</span>
+                        </a>
+                        <a href="#" class="download-item" data-format="txt">
+                            <span class="download-item-text">文本</span>
+                            <span class="download-item-desc">純文字 (.txt)</span>
+                        </a>
+                    </div>
+                </div>
             </div>
             <div id="content-area">
                 <div id="summary-container">
