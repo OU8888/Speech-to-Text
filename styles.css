@@ -506,9 +506,11 @@ select {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    position: relative;
 }
 
 .transcript-entry {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -517,6 +519,43 @@ select {
     transition: background-color 0.3s;
     width: 100%;
     box-sizing: border-box;
+}
+
+.add-line-button {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 24px;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.add-line-button:hover {
+    background: #f5f5f7;
+    transform: translateX(-50%) scale(1.1);
+}
+
+.add-line-zone {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 16px; /* 與 gap 相同 */
+    bottom: -16px;
+    cursor: pointer;
+}
+
+.add-line-zone:hover .add-line-button {
+    opacity: 1;
 }
 
 .transcript-entry:hover {
@@ -1336,4 +1375,65 @@ select {
 .filename-input:focus {
     border-color: #007AFF;
     box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+}
+
+.download-dropdown {
+    position: relative;
+}
+
+.download-dropdown .back-btn {
+    cursor: pointer;
+}
+
+.download-dropdown .back-btn i {
+    font-size: 20px;
+}
+
+.download-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 200px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    display: none;
+    z-index: 1000;
+}
+
+/* 移除這個hover效果 */
+/* .download-dropdown:hover .download-menu {
+    display: block;
+} */
+
+/* 新增這個class來控制顯示 */
+.download-menu.show {
+    display: block;
+}
+
+.download-item {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #1d1d1f;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.download-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.download-item-text {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.download-item-desc {
+    font-size: 12px;
+    color: #666;
 }
