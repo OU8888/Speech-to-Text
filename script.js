@@ -493,11 +493,21 @@ function saveEdit(input, originalElement, index) {
 // 修改 updateDownloadLink 函數
 function updateDownloadLink() {
     const filenameDisplay = document.getElementById('filename-display');
+    const downloadItems = document.querySelectorAll('.download-item');
+    
+    // 如果找不到必要的元素，直接返回
+    if (!filenameDisplay || !downloadItems.length || !currentTranscriptData) {
+        console.warn('更新下載連結時找不到必要元素');
+        return;
+    }
+    
     const filename = filenameDisplay.textContent || 'transcript';
     
     // 更新下載選單項目的數據
-    document.querySelectorAll('.download-item').forEach(item => {
+    downloadItems.forEach(item => {
         const format = item.dataset.format;
+        if (!format) return;
+        
         const content = generateDownloadContent(format);
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
@@ -1302,13 +1312,13 @@ const workerUrl = URL.createObjectURL(workerBlob);
 
 // 修改處理文件的主要函數
 async function processAudioFile(file, frequentWords = []) {
-    document.getElementById('confirm-container').style.display = 'none';
-    processingContainer.style.display = 'block';
-    if (!matrixRain) {
-        matrixRain = MatrixRain.init('processing-container');
-    }
-
     try {
+        document.getElementById('confirm-container').style.display = 'none';
+        processingContainer.style.display = 'block';
+        if (!matrixRain) {
+            matrixRain = MatrixRain.init('processing-container');
+        }
+
         // 設置初始檔案名稱
         setInitialFilename(file);
         
@@ -1401,9 +1411,13 @@ async function processAudioFile(file, frequentWords = []) {
                 matrixRain.canvas.remove();
                 matrixRain = null;
             }
+            
+            // 確保在結果頁面完全顯示後再更新下載連結
+            setTimeout(() => {
+                updateDownloadLink();
+            }, 100);
         }, 500);
 
-        updateDownloadLink();
     } catch (error) {
         console.error('處理文件時出錯:', error);
         alert('處理文件時出錯: ' + error.message);
