@@ -46,28 +46,74 @@
                     <h2>準備轉換</h2>
                     <p id="selected-filename">已選擇檔案：<span></span></p>
                 </div>
-                <div class="frequent-words">
-                    <div class="frequent-words-header">
-                        <h3>高頻詞設定</h3>
-                        <button id="addWordsBtn" class="icon-btn">
-                            <span class="iconify" data-icon="ri:add-line"></span>
-                            新增
+                <div class="language-select">
+                    <h3>語言設定</h3>
+                    <p class="language-description">選擇音訊的主要語言，以提高轉錄準確度</p>
+                    <div class="select-root">
+                        <button class="select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="select-value">繁體中文</span>
+                            <span class="select-icon">
+                                <span class="iconify" data-icon="lucide:chevron-down"></span>
+                            </span>
                         </button>
-                    </div>
-                    <p class="frequent-words-description">用戶可自定義高頻詞替換，將錯誤文字自動修正為正確內容，提升轉錄準確性。</p>
-                    <div id="words-list" class="words-list">
-                        <!-- 高頻詞會動態添加在這裡 -->
+                        <div class="select-content" hidden>
+                            <div class="select-viewport">
+                                <div class="select-group">
+                                    <div class="select-item" data-value="zh" data-display="繁體中文" role="option" aria-selected="true">
+                                        <span class="select-item-indicator">
+                                            <span class="iconify" data-icon="lucide:check"></span>
+                                        </span>
+                                        <div class="select-item-text">繁體中文</div>
+                                    </div>
+                                    <div class="select-item" data-value="en" data-display="英文" role="option">
+                                        <span class="select-item-indicator">
+                                            <span class="iconify" data-icon="lucide:check"></span>
+                                        </span>
+                                        <div class="select-item-text">English</div>
+                                    </div>
+                                    <div class="select-item" data-value="ja" data-display="日文" role="option">
+                                        <span class="select-item-indicator">
+                                            <span class="iconify" data-icon="lucide:check"></span>
+                                        </span>
+                                        <div class="select-item-text">日本語</div>
+                                    </div>
+                                    <div class="select-item" data-value="ko" data-display="韓文" role="option">
+                                        <span class="select-item-indicator">
+                                            <span class="iconify" data-icon="lucide:check"></span>
+                                        </span>
+                                        <div class="select-item-text">한국어</div>
+                                    </div>
+                                    <div class="select-item" data-value="fr" data-display="法文" role="option">
+                                        <span class="select-item-indicator">
+                                            <span class="iconify" data-icon="lucide:check"></span>
+                                        </span>
+                                        <div class="select-item-text">Français</div>
+                                    </div>
+                                    <div class="select-item" data-value="de" data-display="德文" role="option">
+                                        <span class="select-item-indicator">
+                                            <span class="iconify" data-icon="lucide:check"></span>
+                                        </span>
+                                        <div class="select-item-text">Deutsch</div>
+                                    </div>
+                                    <div class="select-item" data-value="es" data-display="西班牙文" role="option">
+                                        <span class="select-item-indicator">
+                                            <span class="iconify" data-icon="lucide:check"></span>
+                                        </span>
+                                        <div class="select-item-text">Español</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                <div class="frequent-words">
+                    <h3>高頻詞設定</h3>
+                    <p class="frequent-words-description">用戶可自訂高頻詞替換，自動修正錯誤文字，提升轉錄準確性。</p>
+                    <textarea class="frequent-words-input" placeholder="請輸入高頻詞，多個詞彙請用逗號分隔"></textarea>
+                </div>
                 <div class="confirm-actions">
-                    <button id="backToUploadBtn" class="secondary-btn">
-                        <span class="iconify" data-icon="ri:arrow-left-line"></span>
-                        返回
-                    </button>
-                    <button id="startConversionBtn" class="primary-btn">
-                        <span class="iconify" data-icon="ri:file-transfer-line"></span>
-                        開始轉換
-                    </button>
+                    <button id="startConversionBtn" class="primary-btn">開始轉換</button>
+                    <button id="backToUploadBtn" class="secondary-btn">返回</button>
                 </div>
             </div>
         </div>
@@ -148,6 +194,7 @@
                     </button>
                     <div id="summary-text"></div>
                 </div>
+                <div id="resizer"></div>
                 <div id="transcript-container">
                     <div id="transcript-header">
                         <div class="header-controls">
@@ -241,5 +288,77 @@
             </div>
         </div>
     </div>
+
+    <style>
+    #summary-container {
+        position: fixed;
+        top: 65px;
+        left: 0;
+        bottom: 0;
+        width: 380px;
+        background: rgba(244,244,244,1);
+        overflow-y: auto;
+        padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .summary-actions {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 380px;
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        padding: 10px 15px;
+        background-color: #fff;
+        border-top: 1px solid #eee;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
+        box-sizing: border-box;
+        z-index: 10;
+    }
+
+    #summary-text {
+        margin-bottom: 60px; /* 為底部操作欄留出空間 */
+    }
+
+    .timeline-entry {
+        display: flex;
+        flex-direction: column;
+        margin: 8px 0;
+        padding: 8px;
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
+    }
+
+    .timeline-time {
+        margin-bottom: 4px;
+        font-family: monospace;
+    }
+
+    .timeline-content {
+        margin-left: 8px;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .timeline-link {
+        color: #333;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s ease;
+    }
+
+    .timeline-link:hover {
+        color: #000;
+        text-decoration: underline;
+    }
+
+    .timeline-entry:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    </style>
 </body>
 </html>
