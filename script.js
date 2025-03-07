@@ -67,86 +67,54 @@ function showConfirmPage(file) {
     if (!matrixRain) {
         matrixRain = MatrixRain.init('confirm-container');
     }
+    // 初始化語言選擇
+    initializeLanguageSelect();
 }
 
 // 高頻詞相關功能
 document.addEventListener('DOMContentLoaded', () => {
-    // 高頻詞添加按鈕
-    document.getElementById('addWordsBtn').addEventListener('click', () => {
-        document.getElementById('words-modal').style.display = 'flex';
-    });
+    // 初始化語言選擇
+    initializeLanguageSelect();
 
-    // 高頻詞對話框關閉按鈕
-    document.querySelectorAll('#words-modal .close-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.getElementById('words-modal').style.display = 'none';
+    // 監聽高頻詞輸入
+    const frequentWordsInput = document.querySelector('.frequent-words-input');
+    if (frequentWordsInput) {
+        frequentWordsInput.addEventListener('change', (e) => {
+            const words = e.target.value.split(',').map(word => word.trim()).filter(word => word);
+            frequentWords = new Set(words);
         });
-    });
-
-    // 點擊對話框外部關閉
-    document.getElementById('words-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'words-modal') {
-            document.getElementById('words-modal').style.display = 'none';
-        }
-    });
-
-    // 確認添加高頻詞
-    document.getElementById('confirmWordsBtn').addEventListener('click', () => {
-        const input = document.getElementById('wordsInput');
-        const words = input.value.split(',').map(word => word.trim()).filter(word => word);
-        
-        words.forEach(word => {
-            if (!frequentWords.has(word)) {
-                frequentWords.add(word);
-                addWordTag(word);
-            }
-        });
-        
-        input.value = '';
-        document.getElementById('words-modal').style.display = 'none';
-    });
-
-    // 查找替換對話框關閉按鈕
-    document.getElementById('findReplaceCloseBtn').addEventListener('click', () => {
-        document.getElementById('findReplaceModal').style.display = 'none';
-    });
-});
-
-// 添加高頻詞標籤
-function addWordTag(word) {
-    const wordsList = document.getElementById('words-list');
-    const tag = document.createElement('div');
-    tag.className = 'word-tag';
-    tag.innerHTML = `
-        <span class="word-text">${word}</span>
-        <button class="remove-word" title="刪除">×</button>
-    `;
-    
-    const removeBtn = tag.querySelector('.remove-word');
-    removeBtn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        frequentWords.delete(word);
-        tag.remove();
-    };
-    
-    wordsList.appendChild(tag);
-}
-
-// 返回上傳頁面
-document.getElementById('backToUploadBtn').addEventListener('click', () => {
-    document.getElementById('confirm-container').style.display = 'none';
-    document.getElementById('upload-container').style.display = 'block';
-    selectedFile = null;
-    frequentWords.clear();
-    document.getElementById('words-list').innerHTML = '';
+    }
 });
 
 // 開始轉換
 document.getElementById('startConversionBtn').addEventListener('click', () => {
     if (selectedFile) {
-        processAudioFile(selectedFile, Array.from(frequentWords));
+        const frequentWordsInput = document.querySelector('.frequent-words-input');
+        const words = frequentWordsInput.value.split(',').map(word => word.trim()).filter(word => word);
+        processAudioFile(selectedFile, words);
     }
+});
+
+// 返回上傳頁面
+document.getElementById('backToUploadBtn').addEventListener('click', function() {
+    // 清除所有狀態
+    document.getElementById('fileInput').value = '';
+    document.querySelector('.frequent-words-input').value = '';
+    
+    // 隱藏確認頁面
+    document.getElementById('confirm-container').style.display = 'none';
+    
+    // 顯示上傳頁面
+    document.getElementById('upload-container').style.display = 'flex';
+    
+    // 重置語言選擇
+    const selectTrigger = document.querySelector('.language-select .select-trigger .select-value');
+    if (selectTrigger) {
+        selectTrigger.textContent = '繁體中文';
+    }
+    
+    // 使用 replaceState 來清除歷史記錄
+    window.history.replaceState(null, '', window.location.pathname);
 });
 
 async function transcribeAudio(file, retryCount = 3, retryDelay = 5000) {
@@ -156,6 +124,10 @@ async function transcribeAudio(file, retryCount = 3, retryDelay = 5000) {
             formData.append('file', file);
             formData.append('model', WHISPER_MODEL);
             formData.append('response_format', 'verbose_json');
+            
+            // 添加語言參數
+            const selectedLanguage = document.querySelector('.language-select .select-item[aria-selected="true"]')?.dataset.value || 'zh';
+            formData.append('language', selectedLanguage);
 
             const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
                 method: 'POST',
@@ -188,6 +160,17 @@ async function transcribeAudio(file, retryCount = 3, retryDelay = 5000) {
 }
 
 async function generateSummary(text) {
+    // 首先計算總時長
+    const totalDuration = currentTranscriptData.segments.reduce((max, segment) => 
+        Math.max(max, segment.end), 0);
+    
+    // 格式化總時長為分鐘和秒
+    const totalMinutes = Math.floor(totalDuration / 60);
+    const totalSeconds = Math.floor(totalDuration % 60);
+    
+    // 格式化為 HH:MM:SS 格式的最大時間
+    const maxTimeFormatted = formatSRTTime(totalDuration);
+    
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -199,29 +182,57 @@ async function generateSummary(text) {
             messages: [
                 { 
                     role: 'system', 
-                    content: `請幫我使用心智圖方式做摘要總結，以「數字」為各個主要主題，細項以「・」顯示，請以繁體中文回覆。
+                    content: `你是一位專業的內容分析專家。請根據提供的音訊轉錄文字，生成全面且結構化的內容分析報告。
+請嚴格按照以下四個部分進行分析，並使用 Markdown 格式：
 
-請務必使用 Markdown 語法來標示重點：
-- 所有主要主題必須用粗體：**主題**
-- 重要關鍵字或特別提到的字句必須用粗體：**關鍵字**
-- 使用縮排來表示層級關係
+# **總結**
+簡潔扼要地說明主要內容、關鍵點和核心信息。重點突出以下幾個方面：
+- 主要主題和目的
+- 關鍵論點或發現
+- 核心信息要點
 
-輸出格式範例：
+# **摘要**
+全面概述內容，包含所有重要信息：
+- 背景和上下文
+- 詳細的重點描述
+- 所有關鍵信息的完整呈現
+- 相關數據或證據支持
 
-1. **中心主題**
-   ・**重要關鍵字1**
-   ・一般描述
-      ・**特別強調的內容**
-      ・一般子項目
+# **觀點**
+深入分析討論內容：
+- 主要論點和立場
+- 重要的討論要點
+- 分析結果和結論
+- 可能的影響和建議
 
-2. **次要主題**
-   ・**關鍵描述**
-   ・一般描述
-      ・**重點內容**
+# **TimeLine**
+按時間順序列出重要事件和發展過程。
 
-請確保所有主題和重要內容都使用 **粗體** 標記，以提高可讀性。` 
+重要提示：
+1. 時間點必須嚴格在音檔總長度 ${totalMinutes}分${totalSeconds}秒 之內
+2. 最大時間點不能超過 ${maxTimeFormatted}
+3. 時間點必須對應到實際的內容轉換點
+4. 時間格式說明：[HH:MM:SS] 表示 [小時:分鐘:秒]，例如 [00:01:30] 表示 1 分 30 秒
+5. 每個時間點必須是實際存在的內容，不要編造不存在的時間點
+
+時間軸格式範例：
+[00:00:00] - [00:00:15] 第一個重點
+[00:00:15] - [00:00:30] 第二個重點
+...
+
+注意事項：
+1. 每個部分都要使用適當的標題層級
+2. 重要概念使用粗體標示：**重要概念**
+3. 時間軸必須包含實際的時間戳記，且不超過音檔總長度
+4. 確保內容的邏輯性和連貫性
+5. 使用清晰的條列方式呈現重點` 
                 },
-                { role: 'user', content: text }
+                { role: 'user', content: `音檔總長度為 ${totalMinutes}分${totalSeconds}秒，最大時間點為 ${maxTimeFormatted}。
+
+請注意：時間格式 [00:00:00] 表示 [時:分:秒]，不要搞錯了。
+
+轉錄內容：
+${text}` }
             ]
         })
     });
@@ -231,7 +242,47 @@ async function generateSummary(text) {
     }
 
     const data = await response.json();
-    return await converter(data.choices[0].message.content);
+    let summaryContent = data.choices[0].message.content;
+    
+    // 檢查並修正時間軸中可能超出範圍的時間點
+    summaryContent = fixTimelineTimestamps(summaryContent, totalDuration);
+    
+    return await convertToTraditional(summaryContent);
+}
+
+// 修正時間軸中可能超出範圍的時間點
+function fixTimelineTimestamps(content, maxDuration) {
+    // 找到 TimeLine 部分
+    const timelineRegex = /# \*\*TimeLine\*\*[\s\S]*?(?=# \*\*|$)/;
+    const timelineMatch = content.match(timelineRegex);
+    
+    if (!timelineMatch) return content;
+    
+    const timelinePart = timelineMatch[0];
+    const timestampRegex = /\[(\d{2}:\d{2}:\d{2})\] - \[(\d{2}:\d{2}:\d{2})\]/g;
+    
+    // 替換所有超出範圍的時間點
+    let fixedTimelinePart = timelinePart.replace(timestampRegex, (match, startTime, endTime) => {
+        const startSeconds = timeStampToSeconds(startTime);
+        let endSeconds = timeStampToSeconds(endTime);
+        
+        // 如果結束時間超出最大時間，則調整為最大時間
+        if (endSeconds > maxDuration) {
+            endSeconds = maxDuration;
+            endTime = formatSRTTime(endSeconds);
+        }
+        
+        // 如果開始時間超出最大時間，則調整為最大時間的 80%
+        if (startSeconds > maxDuration) {
+            const adjustedStart = Math.max(0, maxDuration * 0.8);
+            startTime = formatSRTTime(adjustedStart);
+        }
+        
+        return `[${startTime}] - [${endTime}]`;
+    });
+    
+    // 替換原始內容中的時間軸部分
+    return content.replace(timelineRegex, fixedTimelinePart);
 }
 
 async function convertToTraditional(text) {
@@ -245,7 +296,7 @@ function displayTranscript(transcriptData) {
     
     currentTranscriptData = transcriptData;  // 保存當前的轉錄數據
     const transcriptContainer = document.getElementById('transcript-text');
-    const currentValue = document.querySelector('.select-value')?.textContent || 'srt';
+    const currentValue = document.querySelector('#transcript-header .select-value')?.textContent || 'srt';
     
     if (currentValue === 'srt') {
         displaySRTFormat(transcriptContainer, currentTranscriptData);
@@ -285,6 +336,11 @@ function displaySRTFormat(container, data) {
             deleteSegment(index);
         };
 
+        timeAndTextDiv.appendChild(timeSpan);
+        timeAndTextDiv.appendChild(textSpan);
+        timeAndTextDiv.appendChild(deleteBtn);
+        entry.appendChild(timeAndTextDiv);
+
         // 添加新行區域
         const addLineZone = document.createElement('div');
         addLineZone.className = 'add-line-zone';
@@ -298,11 +354,6 @@ function displaySRTFormat(container, data) {
         };
         
         addLineZone.appendChild(addButton);
-
-        timeAndTextDiv.appendChild(timeSpan);
-        timeAndTextDiv.appendChild(textSpan);
-        timeAndTextDiv.appendChild(deleteBtn);
-        entry.appendChild(timeAndTextDiv);
         entry.appendChild(addLineZone);
         container.appendChild(entry);
     });
@@ -658,6 +709,7 @@ function updateProgress(progress, message) {
     }
     if (progressText) {
         progressText.textContent = message;
+
     }
     if (progressPercent) {
         progressPercent.textContent = `${Math.round(progress)}%`;
@@ -832,11 +884,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchResults = document.getElementById('searchResults');
     const resultCount = document.getElementById('resultCount');
     const replaceAllBtn = document.getElementById('replaceAllBtn');
-    const closeBtn = document.querySelector('.close-btn');
+    const closeBtn = document.getElementById('findReplaceCloseBtn');
 
     // 打開查找替換對話框
     findReplaceBtn.addEventListener('click', (e) => {
-        e.preventDefault(); // 添加這行防止默認行為
+        e.preventDefault();
         findReplaceModal.style.display = 'flex';
         searchInput.focus();
         updateSearchResults();
@@ -845,12 +897,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // 關閉對話框
     closeBtn.addEventListener('click', () => {
         findReplaceModal.style.display = 'none';
+        // 清空輸入框
+        searchInput.value = '';
+        replaceInput.value = '';
+        // 清空搜尋結果
+        searchResults.innerHTML = '';
+        resultCount.textContent = '0';
     });
 
-    // 點擊對話框外部關
+    // 點擊對話框外部關閉
     findReplaceModal.addEventListener('click', (e) => {
         if (e.target === findReplaceModal) {
             findReplaceModal.style.display = 'none';
+            // 清空輸入框和搜尋結果
+            searchInput.value = '';
+            replaceInput.value = '';
+            searchResults.innerHTML = '';
+            resultCount.textContent = '0';
         }
     });
 
@@ -870,8 +933,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 替換按鈕功能
     replaceAllBtn.addEventListener('click', () => {
-        const searchTerm = document.getElementById('searchInput').value;
-        const replaceTerm = document.getElementById('replaceInput').value;
+        const searchTerm = searchInput.value;
+        const replaceTerm = replaceInput.value;
 
         if (!searchTerm) return;
 
@@ -887,15 +950,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // 更新顯示
         displayTranscript(currentTranscriptData);
         
-        // 關閉模態框
-        document.getElementById('findReplaceModal').style.display = 'none';
-        
-        // 清空輸入框
-        document.getElementById('searchInput').value = '';
-        document.getElementById('replaceInput').value = '';
-        
         // 更新下載鏈接
         updateDownloadLink();
+        
+        // 更新搜尋結果顯示
+        updateSearchResults();
+        
+        // 清空輸入框
+        searchInput.value = '';
+        replaceInput.value = '';
+        
+        // 顯示替換成功的提示
+        const originalText = replaceAllBtn.textContent;
+        replaceAllBtn.textContent = '替換完成';
+        replaceAllBtn.style.backgroundColor = '#22c55e';
+        
+        // 2秒後恢復按鈕原本的樣式
+        setTimeout(() => {
+            replaceAllBtn.textContent = originalText;
+            replaceAllBtn.style.backgroundColor = '';
+        }, 2000);
     });
 
     const generateSummaryBtn = document.getElementById('generateSummaryBtn');
@@ -964,10 +1038,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 修改 initializeSelect 函數
 function initializeSelect() {
-    const trigger = document.querySelector('.select-trigger');
-    const content = document.querySelector('.select-content');
-    const items = document.querySelectorAll('.select-item');
-    const valueSpan = document.querySelector('.select-value');
+    const selectRoot = document.querySelector('#transcript-header .select-root');
+    const trigger = selectRoot.querySelector('.select-trigger');
+    const content = selectRoot.querySelector('.select-content');
+    const items = selectRoot.querySelectorAll('.select-item');
+    const valueSpan = selectRoot.querySelector('.select-value');
     
     if (!trigger || !content || !items.length || !valueSpan) {
         console.warn('Select elements not found');
@@ -996,7 +1071,7 @@ function initializeSelect() {
             
             // 更新選中狀態
             items.forEach(i => {
-                i.setAttribute('aria-selected', i === item);
+                i.setAttribute('aria-selected', i === item ? 'true' : 'false');
             });
             
             // 關閉選單
@@ -1083,13 +1158,84 @@ function checkAndUpdateSummaryButton(transcriptData) {
 function displaySummary(summaryText) {
     const summaryContainer = document.getElementById('summary-text');
     
-    // 將 Markdown 的粗體語法轉換為 HTML
-    const htmlContent = summaryText
+    // 將 Markdown 的標題和粗體語法轉換為 HTML
+    let htmlContent = summaryText
+        // 處理標題格式
+        .replace(/# \*\*(.*?)\*\*/g, '<h2>$1</h2>')
+        // 處理粗體
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // 處理換行
         .replace(/\n/g, '<br>');
+    
+    // 處理時間軸點擊功能 - 使兩個時間點都可點擊
+    htmlContent = htmlContent.replace(/\[(\d{2}:\d{2}:\d{2})\] - \[(\d{2}:\d{2}:\d{2})\] (.*?)(?=<br>|$)/g, function(match, startTime, endTime, content) {
+        return `<div class="timeline-entry">
+            <div class="timeline-time">
+                <a href="#" class="timeline-link" data-time="${startTime}">[${startTime}]</a> - 
+                <a href="#" class="timeline-link" data-time="${endTime}">[${endTime}]</a>
+            </div>
+            <span class="timeline-content">${content}</span>
+        </div>`;
+    });
     
     summaryContainer.innerHTML = htmlContent;
     summaryContainer.style.display = 'block';
+    
+    // 添加時間軸點擊事件
+    const timelineLinks = summaryContainer.querySelectorAll('.timeline-link');
+    timelineLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const timeStamp = this.getAttribute('data-time');
+            
+            // 找到對應的轉錄文字段落
+            const segments = currentTranscriptData.segments;
+            const timeInSeconds = timeStampToSeconds(timeStamp);
+            
+            // 找到最接近的時間段
+            let closestSegment = null;
+            let closestIndex = -1;
+            let minDiff = Infinity;
+            
+            segments.forEach((segment, index) => {
+                // 計算時間點與段落開始和結束時間的差距
+                const startDiff = Math.abs(segment.start - timeInSeconds);
+                const endDiff = Math.abs(segment.end - timeInSeconds);
+                const minSegmentDiff = Math.min(startDiff, endDiff);
+                
+                if (minSegmentDiff < minDiff) {
+                    minDiff = minSegmentDiff;
+                    closestSegment = segment;
+                    closestIndex = index;
+                }
+            });
+            
+            if (closestSegment) {
+                // 找到對應的 DOM 元素
+                const transcriptEntries = document.querySelectorAll('.transcript-entry');
+                if (closestIndex >= 0 && closestIndex < transcriptEntries.length) {
+                    const targetEntry = transcriptEntries[closestIndex];
+                    
+                    // 移除之前的高亮
+                    document.querySelectorAll('.highlight-segment').forEach(el => 
+                        el.classList.remove('highlight-segment')
+                    );
+                    
+                    // 添加高亮效果
+                    targetEntry.classList.add('highlight-segment');
+                    
+                    // 滾動到目標位置
+                    targetEntry.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+    });
+}
+
+// 將時間戳轉換為秒數
+function timeStampToSeconds(timeStamp) {
+    const [hours, minutes, seconds] = timeStamp.split(':').map(Number);
+    return hours * 3600 + minutes * 60 + seconds;
 }
 
 // 修改高頻詞修正函數
@@ -1313,6 +1459,13 @@ const workerUrl = URL.createObjectURL(workerBlob);
 // 修改處理文件的主要函數
 async function processAudioFile(file, frequentWords = []) {
     try {
+        updateProgress(0, '準備處理音訊檔案...');
+        
+        // 讀取並解碼音訊檔案
+        const arrayBuffer = await file.arrayBuffer();
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const decodedAudio = await audioContext.decodeAudioData(arrayBuffer);
+        
         document.getElementById('confirm-container').style.display = 'none';
         processingContainer.style.display = 'block';
         if (!matrixRain) {
@@ -1352,8 +1505,8 @@ async function processAudioFile(file, frequentWords = []) {
             }
         } else {
             // 處理音頻文件的邏輯相似，只是不需要提取音頻步驟
-            const audioBuffer = await extractAudio(file);
-            const chunks = await splitAudioBuffer(audioBuffer);
+            updateProgress(20, '正在分割音頻...');
+            const chunks = await splitAudioBuffer(decodedAudio);
             let totalProgress = 20;
             const progressPerChunk = 70 / chunks.length;
             
@@ -1416,13 +1569,25 @@ async function processAudioFile(file, frequentWords = []) {
             setTimeout(() => {
                 updateDownloadLink();
             }, 100);
+            
+            // 在轉錄完成後初始化播放器
+            const segments = allTranscriptionData.segments.map(segment => ({
+                start: segment.start,
+                end: segment.end,
+                text: segment.text
+            }));
+            
+            initializeAudioPlayer(decodedAudio, segments);
+            showAudioPlayer();
         }, 500);
 
+        return allTranscriptionData;
     } catch (error) {
         console.error('處理文件時出錯:', error);
         alert('處理文件時出錯: ' + error.message);
         document.getElementById('confirm-container').style.display = 'block';
         processingContainer.style.display = 'none';
+        throw error;
     }
 }
 
@@ -1641,3 +1806,145 @@ function addNewLine(index) {
     // 更新下載鏈接
     updateDownloadLink();
 }
+
+// 添加語言選擇初始化函數
+function initializeLanguageSelect() {
+    const selectRoot = document.querySelector('.language-select .select-root');
+    const trigger = selectRoot.querySelector('.select-trigger');
+    const content = selectRoot.querySelector('.select-content');
+    const items = selectRoot.querySelectorAll('.select-item');
+    const valueSpan = selectRoot.querySelector('.select-value');
+    
+    if (!trigger || !content || !items.length || !valueSpan) {
+        console.warn('Language select elements not found');
+        return;
+    }
+
+    // 設置初始狀態
+    items.forEach(item => {
+        const isZh = item.dataset.value === 'zh';
+        item.setAttribute('aria-selected', isZh ? 'true' : 'false');
+        if (isZh) {
+            valueSpan.textContent = item.querySelector('.select-item-text').textContent;
+        }
+    });
+    
+    // 確保初始狀態下選單是隱藏的
+    content.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+
+    // 點擊觸發器顯示/隱藏選單
+    trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+        
+        // 切換選單狀態
+        content.hidden = !isExpanded;
+        trigger.setAttribute('aria-expanded', !isExpanded);
+        
+        if (!isExpanded) {
+            // 顯示選單時，確保選單在視窗內
+            const rect = content.getBoundingClientRect();
+            if (rect.bottom > window.innerHeight) {
+                content.style.top = 'auto';
+                content.style.bottom = '100%';
+                content.style.marginTop = '0';
+                content.style.marginBottom = '8px';
+            }
+        }
+    });
+
+    // 點擊選單項目
+    items.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const value = item.dataset.value;
+            const display = item.querySelector('.select-item-text').textContent;
+            
+            // 更新顯示文字
+            valueSpan.textContent = display;
+            
+            // 更新選中狀態
+            items.forEach(i => {
+                i.setAttribute('aria-selected', i === item ? 'true' : 'false');
+            });
+            
+            // 關閉選單
+            content.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+        });
+    });
+
+    // 點擊外部關閉選單
+    document.addEventListener('click', (e) => {
+        if (!selectRoot.contains(e.target)) {
+            content.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+        }
+    });
+}
+
+// 初始化拖曳分隔線功能
+function initializeResizer() {
+    const resizer = document.getElementById('resizer');
+    const summaryContainer = document.getElementById('summary-container');
+    const transcriptContainer = document.getElementById('transcript-container');
+    const headerControls = document.querySelector('.header-controls');
+    const summaryActions = document.querySelector('.summary-actions');
+    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+    let isResizing = false;
+    let initialX;
+    let initialWidth;
+
+    resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        initialX = e.clientX;
+        initialWidth = summaryContainer.offsetWidth;
+        
+        // 添加 dragging 類以改變視覺效果
+        resizer.classList.add('dragging');
+        
+        // 防止文字被選中
+        document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+
+        const deltaX = e.clientX - initialX;
+        const newWidth = Math.max(200, Math.min(initialWidth + deltaX, window.innerWidth - 400));
+
+        // 更新寬度
+        summaryContainer.style.width = `${newWidth}px`;
+        resizer.style.left = `${newWidth}px`;
+        transcriptContainer.style.left = `${newWidth}px`;
+        headerControls.style.left = `${newWidth}px`;
+        
+        // 更新摘要相關元素的寬度
+        summaryActions.style.width = `${newWidth}px`;
+        if (generateSummaryBtn) {
+            generateSummaryBtn.style.left = `${newWidth / 2}px`;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!isResizing) return;
+        
+        isResizing = false;
+        resizer.classList.remove('dragging');
+        document.body.style.userSelect = '';
+    });
+}
+
+// 在文件加載完成後初始化
+document.addEventListener('DOMContentLoaded', () => {
+    // ... existing code ...
+    
+    // 初始化拖曳分隔線
+    initializeResizer();
+});
+
