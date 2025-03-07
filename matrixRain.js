@@ -19,7 +19,7 @@ class MatrixRain {
         this.drops = [];
         this.letterOpacities = new Array(14).fill(0); // 14 letters in "Speech To Text"
         this.letterHitCounts = new Array(14).fill(0); // 追蹤每個字母被擊中的次數
-        this.isGeneratingNew = true; // 新增：控制是否生成新的字符雨
+        this.isGeneratingNew = true; // 控制是否生成新的字符雨
 
         window.addEventListener('resize', () => this.initializeCanvas());
         this.initializeCanvas();
@@ -101,7 +101,7 @@ class MatrixRain {
             }
 
             if (this.drops[i] * this.fontSize > this.canvas.height) {
-                if (this.isGeneratingNew && Math.random() > 0.975) {
+                if (Math.random() > 0.975) {
                     this.drops[i] = Math.floor(Math.random() * -20);
                 }
             } else {
@@ -114,12 +114,12 @@ class MatrixRain {
         }
     }
 
-    // 新增：停止生成新的字符雨的方法
+    // 停止生成新的字符雨的方法
     stopGenerating() {
         this.isGeneratingNew = false;
     }
 
-    // 新增：檢查是否所有字符雨都已完成
+    // 檢查是否所有字符雨都已完成
     isFinished() {
         return this.drops.every(drop => drop * this.fontSize > this.canvas.height);
     }
@@ -128,22 +128,7 @@ class MatrixRain {
         if (containerId === 'result-container') return null;
         const instance = new MatrixRain();
         
-        // 監聽處理頁面的顯示
-        const processingContainer = document.getElementById('processing-container');
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                    if (processingContainer.style.display !== 'none') {
-                        instance.stopGenerating();
-                    }
-                }
-            });
-        });
-        
-        observer.observe(processingContainer, {
-            attributes: true
-        });
-        
+        // 移除監聽處理頁面的顯示，讓矩陣雨持續下著
         return instance;
     }
 } 
