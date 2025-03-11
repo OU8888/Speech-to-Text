@@ -3,6 +3,7 @@ const converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
 const API_KEY = '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';
 const WHISPER_MODEL = 'whisper-large-v3-turbo';
 const GEMINI_API_KEY = 'AIzaSyBsdjECXNEyrw5f_kZvDcvreizhV2SF1ik';
+const QWEN_MODEL = 'qwen-2.5-32b';  // 新增 Qwen 模型常數
 const LLAMA_MODEL = 'llama-3.1-8b-instant';
 
 const dropArea = document.getElementById('drop-area');
@@ -171,18 +172,29 @@ async function generateSummary(text) {
     // 格式化為 HH:MM:SS 格式的最大時間
     const maxTimeFormatted = formatSRTTime(totalDuration);
     
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${API_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model: LLAMA_MODEL,
-            messages: [
-                { 
-                    role: 'system', 
-                    content: `你是一位專業的內容分析專家。請根據提供的音訊轉錄文字，生成全面且結構化的內容分析報告。
+    // 限制文本長度，假設每個中文字約 2 tokens
+    const MAX_TOKENS = 16000; // Qwen 模型的限制
+    const estimatedTokens = text.length * 2;
+    
+    if (estimatedTokens > MAX_TOKENS) {
+        // 截斷文本，保留前面部分
+        const maxChars = Math.floor(MAX_TOKENS / 2);
+        text = text.slice(0, maxChars) + "\n...(內容過長，僅摘要前段內容)";
+    }
+    
+    try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: QWEN_MODEL,
+                messages: [
+                    { 
+                        role: 'system', 
+                        content: `你是一位專業的內容分析專家。請根據提供的音訊轉錄文字，生成全面且結構化的內容分析報告。
 請嚴格按照以下四個部分進行分析，並使用 Markdown 格式：
 
 # **總結**
@@ -226,28 +238,37 @@ async function generateSummary(text) {
 3. 時間軸必須包含實際的時間戳記，且不超過音檔總長度
 4. 確保內容的邏輯性和連貫性
 5. 使用清晰的條列方式呈現重點` 
-                },
-                { role: 'user', content: `音檔總長度為 ${totalMinutes}分${totalSeconds}秒，最大時間點為 ${maxTimeFormatted}。
+                    },
+                    { 
+                        role: 'user', 
+                        content: `音檔總長度為 ${totalMinutes}分${totalSeconds}秒，最大時間點為 ${maxTimeFormatted}。
 
 請注意：時間格式 [00:00:00] 表示 [時:分:秒]，不要搞錯了。
 
 轉錄內容：
-${text}` }
-            ]
-        })
-    });
+${text}` 
+                    }
+                ],
+                max_tokens: 4000  // 限制輸出長度
+            })
+        });
 
-    if (!response.ok) {
-        throw new Error('生成摘要失敗');
+        if (!response.ok) {
+            console.error('摘要生成失敗:', await response.text());
+            throw new Error('生成摘要失敗');
+        }
+
+        const data = await response.json();
+        let summaryContent = data.choices[0].message.content;
+        
+        // 檢查並修正時間軸中可能超出範圍的時間點
+        summaryContent = fixTimelineTimestamps(summaryContent, totalDuration);
+        
+        return await convertToTraditional(summaryContent);
+    } catch (error) {
+        console.error('摘要生成錯誤:', error);
+        throw error;
     }
-
-    const data = await response.json();
-    let summaryContent = data.choices[0].message.content;
-    
-    // 檢查並修正時間軸中可能超出範圍的時間點
-    summaryContent = fixTimelineTimestamps(summaryContent, totalDuration);
-    
-    return await convertToTraditional(summaryContent);
 }
 
 // 修正時間軸中可能超出範圍的時間點
@@ -1479,52 +1500,60 @@ async function processAudioFile(file, frequentWords = []) {
         let allTranscriptionData = { segments: [] };
         let timeOffset = 0;
         
-        if (file.type.startsWith('video/')) {
-            updateProgress(0, '正在從影片中提取音頻...');
-            const audioBuffer = await extractAudio(file);
-            updateProgress(20, '正在分割音頻...');
+        // 計算需要分割的段數
+        const audioDuration = decodedAudio.duration;
+        const segmentDuration = 1800; // 30分鐘 = 1800秒
+        const numberOfSegments = Math.ceil(audioDuration / segmentDuration);
+        
+        updateProgress(20, '正在分割音頻...');
+        let totalProgress = 20;
+        const progressPerChunk = 70 / numberOfSegments;
+
+        // 逐段處理音頻
+        for (let i = 0; i < numberOfSegments; i++) {
+            const startTime = i * segmentDuration;
+            const endTime = Math.min((i + 1) * segmentDuration, audioDuration);
             
-            const chunks = await splitAudioBuffer(audioBuffer);
-            let totalProgress = 20;
-            const progressPerChunk = 70 / chunks.length;
+            updateProgress(totalProgress, `正在處理第 ${i + 1}/${numberOfSegments} 段音頻...`);
             
-            for (let i = 0; i < chunks.length; i++) {
-                updateProgress(totalProgress, `正在處理第 ${i + 1}/${chunks.length} 段音頻...`);
-                const mp3Blob = await convertToMp3(chunks[i]);
-                const chunkFile = new File([mp3Blob], `chunk_${i}.mp3`, { type: 'audio/mp3' });
-                
-                if (i > 0) {
-                    updateProgress(totalProgress, `等待 API 冷卻中...`);
-                    await new Promise(resolve => setTimeout(resolve, 5000));
-                }
-                
-                const transcriptionData = await transcribeAudio(chunkFile);
-                allTranscriptionData.segments.push(...transcriptionData.segments);
-                timeOffset += 1800;
-                totalProgress += progressPerChunk;
+            // 提取當前時間段的音頻
+            const segmentSamples = Math.floor((endTime - startTime) * decodedAudio.sampleRate);
+            const segmentBuffer = audioContext.createBuffer(
+                decodedAudio.numberOfChannels,
+                segmentSamples,
+                decodedAudio.sampleRate
+            );
+
+            // 複製音頻數據
+            for (let channel = 0; channel < decodedAudio.numberOfChannels; channel++) {
+                const channelData = decodedAudio.getChannelData(channel);
+                const segmentData = segmentBuffer.getChannelData(channel);
+                const startSample = Math.floor(startTime * decodedAudio.sampleRate);
+                segmentData.set(channelData.slice(startSample, startSample + segmentSamples));
             }
-        } else {
-            // 處理音頻文件的邏輯相似，只是不需要提取音頻步驟
-            updateProgress(20, '正在分割音頻...');
-            const chunks = await splitAudioBuffer(decodedAudio);
-            let totalProgress = 20;
-            const progressPerChunk = 70 / chunks.length;
+
+            // 轉換為 MP3
+            const mp3Blob = await convertToMp3(segmentBuffer);
+            const chunkFile = new File([mp3Blob], `chunk_${i}.mp3`, { type: 'audio/mp3' });
             
-            for (let i = 0; i < chunks.length; i++) {
-                updateProgress(totalProgress, `正在處理第 ${i + 1}/${chunks.length} 段音頻...`);
-                const mp3Blob = await convertToMp3(chunks[i]);
-                const chunkFile = new File([mp3Blob], `chunk_${i}.mp3`, { type: 'audio/mp3' });
-                
-                if (i > 0) {
-                    updateProgress(totalProgress, `等待 API 冷卻中...`);
-                    await new Promise(resolve => setTimeout(resolve, 5000));
-                }
-                
-                const transcriptionData = await transcribeAudio(chunkFile);
-                allTranscriptionData.segments.push(...transcriptionData.segments);
-                timeOffset += 1800;
-                totalProgress += progressPerChunk;
+            // API 冷卻
+            if (i > 0) {
+                updateProgress(totalProgress, `等待 API 冷卻中...`);
+                await new Promise(resolve => setTimeout(resolve, 5000));
             }
+            
+            // 轉錄當前段落
+            const transcriptionData = await transcribeAudio(chunkFile);
+            
+            // 調整時間戳
+            transcriptionData.segments = transcriptionData.segments.map(segment => ({
+                ...segment,
+                start: segment.start + startTime,
+                end: segment.end + startTime
+            }));
+            
+            allTranscriptionData.segments.push(...transcriptionData.segments);
+            totalProgress += progressPerChunk;
         }
 
         // 確保時間戳按順序排序
@@ -1538,20 +1567,20 @@ async function processAudioFile(file, frequentWords = []) {
             })
         );
 
-        // 一次性處理所有文字的高頻詞修正
+        // 處理高頻詞
         if (frequentWords && frequentWords.length > 0) {
             updateProgress(90, '正在進行高頻詞修正...');
             const allText = allTranscriptionData.segments.map(segment => segment.text).join('\n');
             const correctedText = await correctFrequentWords(allText, frequentWords);
             const correctedLines = correctedText.split('\n');
             
-            // 確保每個段落都有對應的文字
             allTranscriptionData.segments = allTranscriptionData.segments.map((segment, index) => ({
                 ...segment,
                 text: index < correctedLines.length ? correctedLines[index] : segment.text
             }));
         }
 
+        // 顯示結果
         displayTranscript(allTranscriptionData);
         checkAndUpdateSummaryButton(allTranscriptionData);
 
@@ -1569,16 +1598,6 @@ async function processAudioFile(file, frequentWords = []) {
             setTimeout(() => {
                 updateDownloadLink();
             }, 100);
-            
-            // 在轉錄完成後初始化播放器
-            const segments = allTranscriptionData.segments.map(segment => ({
-                start: segment.start,
-                end: segment.end,
-                text: segment.text
-            }));
-            
-            initializeAudioPlayer(decodedAudio, segments);
-            showAudioPlayer();
         }, 500);
 
         return allTranscriptionData;
