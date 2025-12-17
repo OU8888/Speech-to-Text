@@ -13,7 +13,7 @@ class MatrixRain {
         document.body.appendChild(this.canvas);
 
         this.characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789!@#$%^&*()';
-        this.finalText = ['S','p','e','e','c','h',' ','T','o',' ','T','e','x','t'];
+        this.finalText = ['S', 'p', 'e', 'e', 'c', 'h', ' ', 'T', 'o', ' ', 'T', 'e', 'x', 't'];
         this.fontSize = 14;
         this.columns = 0;
         this.drops = [];
@@ -24,7 +24,7 @@ class MatrixRain {
         window.addEventListener('resize', () => this.initializeCanvas());
         this.initializeCanvas();
         this.animate();
-        
+
         // 開始時設置所有字母為隨機字符
         this.updateRandomCharacters();
     }
@@ -69,7 +69,7 @@ class MatrixRain {
                 hasActiveDrops = true;
                 const text = this.characters.charAt(Math.floor(Math.random() * this.characters.length));
                 const y = this.drops[i] * this.fontSize;
-                
+
                 if (y <= this.canvas.height) {
                     this.ctx.fillText(text, i * this.fontSize, y);
                 }
@@ -79,16 +79,16 @@ class MatrixRain {
                     const rect = letter.getBoundingClientRect();
                     const centerX = rect.left + rect.width / 2;
                     const centerY = rect.top + rect.height / 2;
-                    
+
                     const rainX = i * this.fontSize;
                     const rainY = this.drops[i] * this.fontSize;
-                    
-                    if (Math.abs(rainX - centerX) < rect.width && 
+
+                    if (Math.abs(rainX - centerX) < rect.width &&
                         Math.abs(rainY - centerY) < rect.height) {
                         this.letterHitCounts[index]++;
                         this.letterOpacities[index] = Math.min(1, this.letterHitCounts[index] / 50);
                         letter.style.color = `rgba(0, 0, 0, ${this.letterOpacities[index]})`;
-                        
+
                         if (this.letterHitCounts[index] === 50) {
                             letter.textContent = this.finalText[index];
                             if (this.finalText[index] === ' ') {
@@ -127,7 +127,7 @@ class MatrixRain {
     static init(containerId) {
         if (containerId === 'result-container') return null;
         const instance = new MatrixRain();
-        
+
         // 移除監聽處理頁面的顯示，讓矩陣雨持續下著
         return instance;
     }

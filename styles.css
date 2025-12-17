@@ -20,10 +20,11 @@ header {
     justify-content: space-between;
     padding: 20px;
     background-color: #ffffff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.home-btn, .download-btn {
+.home-btn,
+.download-btn {
     text-decoration: none;
     color: #007aff;
     font-weight: bold;
@@ -141,25 +142,24 @@ main {
     bottom: 0;
     width: 380px;
     min-width: 200px;
-    background: rgba(244,244,244,1);
+    background: rgba(244, 244, 244, 1);
     overflow-y: auto;
     padding: 20px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: relative;
 }
 
 .summary-btn {
     width: 150px;
     height: 35px;
-    background: rgba(255,255,255,1);
-    border: 1px solid rgba(226,226,226,1);
+    background: rgba(255, 255, 255, 1);
+    border: 1px solid rgba(226, 226, 226, 1);
     border-radius: 8px;
     font-family: Inter, sans-serif;
     font-size: 14px;
-    color: rgba(0,0,0,1);
+    color: rgba(0, 0, 0, 1);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -174,7 +174,7 @@ main {
 }
 
 .summary-btn:hover {
-    background: rgba(0,0,0,0.05);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .summary-btn .iconify {
@@ -213,19 +213,19 @@ main {
 }
 
 .timeline-entry:hover {
-    background-color: transparent;
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .timeline-time {
     margin-right: 12px;
-    margin-bottom: 0;
+    margin-bottom: 4px;
     font-family: monospace;
     white-space: nowrap;
 }
 
 .timeline-content {
     flex: 1;
-    margin-left: 0;
+    margin-left: 8px;
     color: #333;
     line-height: 1.5;
 }
@@ -270,7 +270,7 @@ main {
     left: 380px;
     right: 0;
     bottom: 0;
-    background: rgba(255,255,255,1);
+    background: rgba(255, 255, 255, 1);
     overflow-y: auto;
     overflow-x: hidden;
     padding: 65px 20px 20px;
@@ -334,13 +334,13 @@ main {
 select {
     width: 150px;
     height: 40px;
-    background: rgba(255,255,255,1);
-    border: 1px solid rgba(233,233,233,1);
+    background: rgba(255, 255, 255, 1);
+    border: 1px solid rgba(233, 233, 233, 1);
     border-radius: 8px;
-    font-family: Oswald, sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     font-weight: 200;
     font-size: 16px;
-    color: rgba(92,92,92,1);
+    color: rgba(92, 92, 92, 1);
     padding: 0 10px;
     margin-left: 10px;
 }
@@ -363,7 +363,10 @@ select {
     background-color: #f0f0f0;
 }
 
-body, input, select, button {
+body,
+input,
+select,
+button {
     font-family: 'Noto Sans JP', sans-serif;
 }
 
@@ -422,10 +425,24 @@ body, input, select, button {
 }
 
 @keyframes dots {
-    0%, 20% { content: ''; }
-    40% { content: '.'; }
-    60% { content: '..'; }
-    80%, 100% { content: '...'; }
+
+    0%,
+    20% {
+        content: '';
+    }
+
+    40% {
+        content: '.';
+    }
+
+    60% {
+        content: '..';
+    }
+
+    80%,
+    100% {
+        content: '...';
+    }
 }
 
 /* 修改頂部欄的樣式 */
@@ -447,8 +464,10 @@ body, input, select, button {
 /* 修改返回和下載按鈕的樣式 */
 .back-btn,
 .download-btn {
-    width: 33px; /* 返回按鈕改為 33px */
-    height: 33px; /* 返回按鈕改為 33px */
+    width: 33px;
+    /* 返回按鈕改為 33px */
+    height: 33px;
+    /* 返回按鈕改為 33px */
     border-radius: 50%;
     background-color: transparent;
     display: flex;
@@ -464,7 +483,8 @@ body, input, select, button {
     width: 20px;
     height: 20px;
     position: relative;
-    top: -3px; /* 保持向上移動 3 像素 */
+    top: -3px;
+    /* 保持向上移動 3 像素 */
 }
 
 /* 滑鼠懸停時的效果 */
@@ -480,7 +500,8 @@ body, input, select, button {
 
 /* 調整結果容器的頂部內邊距 */
 #result-container {
-    padding-top: 65px; /* 與 top-bar 的高度相同 */
+    padding-top: 65px;
+    /* 與 top-bar 的高度相同 */
 }
 
 /* 刪除這個重複的樣式 */
@@ -528,8 +549,8 @@ select {
 }
 
 #summary-container h2 {
-    color: rgba(72,72,72,1);
-    font-family: Oswald, sans-serif;
+    color: rgba(72, 72, 72, 1);
+    font-family: 'Noto Sans JP', sans-serif;
     font-weight: 600;
     font-size: 16px;
     margin-top: 42px;
@@ -537,7 +558,7 @@ select {
 }
 
 #summary-text {
-    color: rgba(0,0,0,1);
+    color: rgba(0, 0, 0, 1);
     font-family: Inter, sans-serif;
     font-weight: 300;
     font-size: 14px;
@@ -545,7 +566,7 @@ select {
 }
 
 #transcript-text {
-    color: rgba(0,0,0,1);
+    color: rgba(0, 0, 0, 1);
     font-family: Inter, sans-serif;
     font-weight: 400;
     font-size: 16px;
@@ -614,7 +635,7 @@ select {
     opacity: 0;
     transition: all 0.2s ease;
     z-index: 10;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .add-line-button:hover {
@@ -626,7 +647,8 @@ select {
     position: absolute;
     left: 0;
     right: 0;
-    height: 16px; /* 與 gap 相同 */
+    height: 16px;
+    /* 與 gap 相同 */
     bottom: -16px;
     cursor: pointer;
 }
@@ -747,6 +769,7 @@ select {
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -757,7 +780,8 @@ select {
     border-radius: 12px;
     width: 90%;
     max-width: 800px;
-    height: 700px; /* 增加高度以容納 6 條字幕 */
+    height: 700px;
+    /* 增加高度以容納 6 條字幕 */
     display: flex;
     flex-direction: column;
     margin: 20px;
@@ -770,7 +794,8 @@ select {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0; /* 防止header被壓縮 */
+    flex-shrink: 0;
+    /* 防止header被壓縮 */
 }
 
 .modal-header h2 {
@@ -784,7 +809,8 @@ select {
     padding: 24px;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* 重要：確保內部滾動正常工作 */
+    overflow: hidden;
+    /* 重要：確保內部滾動正常工作 */
 }
 
 .search-inputs {
@@ -793,7 +819,8 @@ select {
     gap: 16px;
     margin-bottom: 24px;
     padding: 0 20px;
-    flex-shrink: 0; /* 防止搜索框被壓縮 */
+    flex-shrink: 0;
+    /* 防止搜索框被壓縮 */
 }
 
 .input-group {
@@ -826,7 +853,8 @@ select {
     flex: 1;
     margin-bottom: 24px;
     padding: 0 20px;
-    overflow-y: auto; /* 只有結果區域可以滾動 */
+    overflow-y: auto;
+    /* 只有結果區域可以滾動 */
 }
 
 .results-table table {
@@ -848,14 +876,17 @@ select {
 
 .results-table th,
 .results-table td {
-    padding: 16px 12px; /* 增加上下內邊距 */
+    padding: 16px 12px;
+    /* 增加上下內邊距 */
     text-align: left;
     border-bottom: 1px solid #e5e5e5;
-    line-height: 1.5; /* 增加行高 */
+    line-height: 1.5;
+    /* 增加行高 */
 }
 
 .results-table th {
-    padding: 14px 12px; /* 增加上下內邊距 */
+    padding: 14px 12px;
+    /* 增加上下內邊距 */
     font-weight: 600;
     color: #86868b;
     font-size: 12px;
@@ -867,8 +898,10 @@ select {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0; /* 防止footer被壓縮 */
-    background-color: white; /* 確保底部背景色 */
+    flex-shrink: 0;
+    /* 防止footer被壓縮 */
+    background-color: white;
+    /* 確保底部背景色 */
 }
 
 .results-count {
@@ -928,7 +961,7 @@ select {
 
 .icon-btn {
     background: #FFFFFF;
-    border: 1px solid rgba(226,226,226,1);
+    border: 1px solid rgba(226, 226, 226, 1);
     border-radius: 8px;
     cursor: pointer;
     display: flex;
@@ -940,7 +973,7 @@ select {
 }
 
 .icon-btn:hover {
-    background: rgba(0,0,0,0.05);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .icon-btn .iconify {
@@ -963,7 +996,8 @@ select {
 /* 選單容器樣式 */
 .select-root {
     position: relative;
-    z-index: 50; /* 確保下拉選單在其他元素之上 */
+    z-index: 50;
+    /* 確保下拉選單在其他元素之上 */
 }
 
 .select-trigger {
@@ -974,22 +1008,23 @@ select {
     justify-content: space-between;
     padding: 0 12px;
     background-color: #FFFFFF;
-    border: 1px solid rgba(226,226,226,1);
+    border: 1px solid rgba(226, 226, 226, 1);
     border-radius: 8px;
     font-family: Inter, sans-serif;
     font-size: 14px;
-    color: rgba(0,0,0,1);
+    color: rgba(0, 0, 0, 1);
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .select-trigger:hover {
-    background: rgba(0,0,0,0.05);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .select-value {
     font-weight: 500;
-    margin-right: auto; /* 讓文字靠左 */
+    margin-right: auto;
+    /* 讓文字靠左 */
 }
 
 .select-icon {
@@ -997,7 +1032,8 @@ select {
     align-items: center;
     justify-content: center;
     opacity: 0.5;
-    margin-left: 8px; /* 確保與文字有適當間距 */
+    margin-left: 8px;
+    /* 確保與文字有適當間距 */
 }
 
 .select-icon .iconify {
@@ -1091,6 +1127,7 @@ select {
         opacity: 0;
         transform: translateY(-8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1102,11 +1139,11 @@ select {
     width: 75px;
     height: 35px;
     background: #FFFFFF;
-    border: 1px solid rgba(226,226,226,1);
+    border: 1px solid rgba(226, 226, 226, 1);
     border-radius: 8px;
     font-family: Inter, sans-serif;
     font-size: 14px;
-    color: rgba(0,0,0,1);
+    color: rgba(0, 0, 0, 1);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -1117,7 +1154,7 @@ select {
 }
 
 .find-replace-btn:hover {
-    background: rgba(0,0,0,0.05);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 /* 添加摘要警告文字的樣式 */
@@ -1261,7 +1298,8 @@ select {
     margin-top: 40px;
 }
 
-.primary-btn, .secondary-btn {
+.primary-btn,
+.secondary-btn {
     width: 100%;
     justify-content: center;
     padding: 16px 24px;
@@ -1621,7 +1659,8 @@ select {
     opacity: 1;
     transform: translateY(0);
     transition: all 0.2s ease;
-    width: 100%; /* 確保寬度與觸發按鈕相同 */
+    width: 100%;
+    /* 確保寬度與觸發按鈕相同 */
 }
 
 .language-select .select-content[hidden] {
@@ -1642,8 +1681,10 @@ select {
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
-    width: calc(100% - 16px); /* 調整選項寬度，減去內邊距 */
-    margin: 2px 8px; /* 調整邊距 */
+    width: calc(100% - 16px);
+    /* 調整選項寬度，減去內邊距 */
+    margin: 2px 8px;
+    /* 調整邊距 */
     box-sizing: border-box;
 }
 
@@ -1714,10 +1755,11 @@ select {
 }
 
 @keyframes highlight-fade {
-    0% { 
+    0% {
         border-color: rgba(0, 0, 0, 1);
     }
-    100% { 
+
+    100% {
         border-color: rgba(0, 0, 0, 0);
     }
 }
