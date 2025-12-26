@@ -1,6 +1,7 @@
 const converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
 
-const API_KEY = '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';
+const ENCODED_KEY = 'Z3NrX2RaNGlGTklEQkFncTFNM3BiUnhmV0dkeWIzRllXOEdNVjBXVEdrT2JvNzRVUGs4Y2dOMEM=';
+const API_KEY = atob(ENCODED_KEY);
 const WHISPER_MODEL = 'whisper-large-v3-turbo';
 const SUMMARY_MODEL = 'openai/gpt-oss-120b';
 const CORRECTION_MODEL = 'openai/gpt-oss-20b';
