@@ -69,6 +69,13 @@ test('不把「在」留在行尾，優先在介詞前換行', () =>
     assert.deepEqual(lines('接下來我們會介紹機器學習在飲料產業的應用'), ['接下來我們會介紹機器學習', '在飲料產業的應用']));
 test('不把「要」留在行尾', () =>
     assert.deepEqual(lines('今天我們要來聊聊三得利這個品牌的歷史'), ['今天我們要來聊聊', '三得利這個品牌的歷史']));
+test('行尾不留落單的一個字，即使那裡剛好有停頓（沒收進詞庫的專有名詞）', () => {
+    const seg = timed('今天我們要來聊聊三得利這個品牌的歷史');
+    const k = seg.text.indexOf('得');                     // 在「三」和「得」之間放 0.5 秒的停頓
+    for (const w of seg.words.slice(k)) { w.start += 0.5; w.end += 0.5; }
+    seg.end += 0.5;
+    assert.deepEqual(resegment(seg, 'zh').map(s => s.text), ['今天我們要來聊聊', '三得利這個品牌的歷史']);
+});
 test('詞庫裡的詞不會被切開', () => {
     dict.data.terms = ['蜜露珂娜膠原蛋白'];
     const out = lines('我每天早上都會喝蜜露珂娜膠原蛋白補充營養');

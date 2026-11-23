@@ -15,6 +15,7 @@ const CONFIG = {
     maxFileSize: 500 * 1024 * 1024,
     chunkSeconds: 600,   // 每段送去辨識的長度
     concurrency: 3,      // 同時辨識幾段
+    lowConfidence: -0.45, // Whisper 的平均把握度（avg_logprob，越接近 0 越有把握）低於這個值就標成「待確認」
 };
 
 const FILE_EXTENSIONS = ['.mp4', '.mov', '.webm', '.mkv', '.mp3', '.wav', '.ogg', '.aac', '.m4a', '.flac', '.wma'];
@@ -336,8 +337,10 @@ function assemble(results, cuts, rate, lang) {
                 mine.push({ word: conv(x.word), start: x.start + offset, end: x.end + offset });
             }
             if (!text) continue;
+            // 把握度低、疑似靜音、或內容重複得不正常（Whisper 亂編時的特徵）的片段，標成待確認
+            const low = s.avg_logprob < CONFIG.lowConfidence || s.no_speech_prob > 0.5 || s.compression_ratio > 2.4;
             for (const piece of resegment({ start: s.start + offset, end: s.end + offset, text, words: mine }, lang)) {
-                segs.push({ ...piece, text: dict.apply(piece.text) });
+                segs.push({ ...piece, text: dict.apply(piece.text), ...(low && { low: true }) });
             }
         }
     });
@@ -409,9 +412,9 @@ function resegment(seg, lang) {
     const split = line => {
         const total = lenOf(line);
         if (total <= max || line.length < 2) return [line];
-        const whole = textOf(line), boundaries = new Set(), inTerm = new Set();
+        const whole = textOf(line), boundaries = new Map(), inTerm = new Set();   // boundaries：位置 → 在那裡結束的詞
         let pos = 0;
-        for (const p of segmentWords(whole, lang)) { pos += p.length; boundaries.add(pos); }
+        for (const p of segmentWords(whole, lang)) { pos += p.length; boundaries.set(pos, p); }
         // 詞庫裡的詞（常用詞、修正規則的兩邊）不能被切開
         for (const term of [...dict.data.terms, ...dict.data.rules.flatMap(r => [r.from, r.to])]) {
             for (let at = whole.indexOf(term); term && at >= 0; at = whole.indexOf(term, at + 1)) {
@@ -425,12 +428,15 @@ function resegment(seg, lang) {
             acc += visualLen(stripPunct(prev.word));
             if (acc <= 0 || acc >= total) continue;
             const pause = timed ? clamp(line[k].start - prev.end, 0, 0.5) : 0;
-            const rest = whole.slice(offset).trimStart();
+            const rest = whole.slice(offset).trimStart(), tail = boundaries.get(offset) || '';
+            // 行尾落單的一個字（不是語氣詞）通常是下一個詞的開頭，例如沒收進詞庫的專有名詞「三｜得利」
+            const orphan = tail.length === 1 && /\p{Script=Han}/u.test(tail) && !/[了嗎呢吧啊呀喔哦的過著]/.test(tail);
             const score = Math.abs(acc - total / 2)
                 + (boundaries.has(offset) && !inTerm.has(offset) ? 0 : 100)            // 不切在詞中間
                 - pause * 4                                                             // 有停頓的地方優先
                 - (/[、\s]$/.test(prev.word) || /^\s/.test(line[k].word) ? 3 : 0)       // 頓號、空格後優先
                 - (LINE_START.test(rest) ? 3 : 0)                                       // 連接詞、介詞前面是自然的斷點
+                + (orphan ? 4 : 0)
                 + (LINE_START_BAD.test(rest) || LINE_END_BAD.test(whole.slice(0, offset).trimEnd()) ? 6 : 0);
             if (score < bestScore) { bestScore = score; best = k; }
         }
@@ -637,9 +643,10 @@ function countHTML(text) {
 }
 
 function rowHTML(s, i) {
-    return `<div class="row" data-i="${i}">` +
+    return `<div class="row${s.low ? ' low' : ''}" data-i="${i}">` +
         `<button class="time" tabindex="-1" title="跳到這一句">${timeLabel(s)}</button>` +
         `<div class="txt" contenteditable="plaintext-only" spellcheck="false">${esc(s.text)}</div>` +
+        (s.low ? `<button class="flag" tabindex="-1" title="辨識把握度偏低，建議聽一次確認。點一下標為已確認">?</button>` : '') +
         countHTML(s.text) +
         `<button class="del" tabindex="-1" title="刪除">${icon('close')}</button>` +
         `<button class="merge" tabindex="-1" title="與下一句合併">${icon('merge')}</button>` +
@@ -658,6 +665,28 @@ function renderList(focus) {
     drawWave();
     if (focus) focusRow(...focus);
     refreshDots();
+    updateLowBtn();
+}
+
+// 待確認的句子：改過字或點掉問號就視為已確認
+function updateLowBtn() {
+    const n = state.segs.filter(s => s.low).length;
+    $('lowBtn').hidden = !n;
+    $('lowBtn').lastChild.textContent = `待確認 ${n}`;
+}
+
+function clearLow(i) {
+    const segs = state.segs.slice(), { low, ...rest } = segs[i];
+    segs[i] = rest;
+    commit(segs);
+}
+
+function nextLow() {
+    const n = state.segs.length;
+    for (let k = 1; k <= n; k++) {
+        const i = (Math.max(state.sel, -1) + k) % n;
+        if (state.segs[i].low) { select(i, true); return seek(state.segs[i].start); }
+    }
 }
 
 function markRows() {
@@ -702,7 +731,7 @@ function commit(segs, { render = true, focus } = {}) {
     state.redo = [];
     state.segs = segs;
     state.sel = Math.min(state.sel, segs.length - 1);
-    if (render) renderList(focus); else drawWave();
+    if (render) renderList(focus); else { drawWave(); updateLowBtn(); }
     saveProject();
 }
 
@@ -837,8 +866,10 @@ function commitEdit(el) {
     if (!text) return removeSeg(i);
     el.textContent = text;
     el.parentNode.querySelector('.count').outerHTML = countHTML(text);
-    const segs = state.segs.slice();
-    segs[i] = { ...segs[i], text };
+    el.parentNode.classList.remove('low');
+    el.parentNode.querySelector('.flag')?.remove();
+    const segs = state.segs.slice(), { low, ...rest } = segs[i];
+    segs[i] = { ...rest, text };
     commit(segs, { render: false });
     suggestRule(diffRule(orig, text));
 }
@@ -896,6 +927,7 @@ function initList() {
         if (!row) return;
         const i = +row.dataset.i, hit = sel => e.target.closest(sel);
         if (hit('.sp')) return splitSeg(i, +hit('.sp').dataset.o);
+        if (hit('.flag')) return clearLow(i);
         if (hit('.del')) return removeSeg(i);
         if (hit('.add')) return addSeg(i);
         if (hit('.merge')) return mergeSeg(i);
@@ -1130,9 +1162,12 @@ function drawWave() {
     ctx.font = '11px sans-serif';
     for (const { i, x1, bw, selected } of boxes) {
         roundBox(x1 + 0.5, top + 0.5, bw - 1, body - 1);
+        const low = state.segs[i].low;   // 待確認的句子用虛線框
         ctx.lineWidth = selected ? 2 : 1;
-        ctx.strokeStyle = selected ? '#111' : 'rgba(0, 0, 0, 0.22)';
+        ctx.strokeStyle = selected || low ? '#111' : 'rgba(0, 0, 0, 0.22)';
+        ctx.setLineDash(low ? [4, 3] : []);
         ctx.stroke();
+        ctx.setLineDash([]);
         if (selected && bw > 24) {
             ctx.fillStyle = '#111';
             for (const hx of [x1 + 5, x1 + bw - 8]) { roundBox(hx, top + body / 2 - 12, 3, 24, 1.5); ctx.fill(); }
@@ -1649,6 +1684,7 @@ function applyProof(fixes) {
 
 function initProof() {
     $('proofBtn').addEventListener('click', runProof);
+    $('lowBtn').addEventListener('click', nextLow);
     $('proofAcceptAll').addEventListener('click', () => applyProof([...proofFixes]));
     $('proofList').addEventListener('click', e => {
         const { accept, skip } = e.target.dataset;
