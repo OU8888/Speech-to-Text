@@ -1072,8 +1072,10 @@ function initPlayer() {
 const RULER = 18;
 const wave = { el: $('wave'), ctx: $('wave').getContext('2d'), w: 0, h: 0, pps: 0, off: 0, time: 0, hover: -1, hoverY: 0, drag: null, draft: null, draftNew: null, shift: null };
 
-const fitPps = () => wave.w / Math.max(state.duration, 1);
-function clampOff() { wave.off = clamp(wave.off, 0, Math.max(0, state.duration - wave.w / wave.pps)); }
+const timelineEnd = () => Math.max(state.duration, (state.segs.at(-1)?.end ?? 0) + Math.max(wave.shift?.dt ?? 0, 0)) +
+    (wave.drag && wave.drag.mode !== 'seek' ? wave.w / wave.pps / 2 : 0);
+const fitPps = () => wave.w / Math.max(timelineEnd(), 1);
+function clampOff() { wave.off = clamp(wave.off, 0, Math.max(0, timelineEnd() - wave.w / wave.pps)); }
 
 function layoutWave() {
     const rect = wave.el.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
@@ -1129,6 +1131,13 @@ function drawWave() {
     if (!w || $('result-container').hidden) return;
     ctx.clearRect(0, 0, w, h);
     const top = RULER + 2, body = h - top - 3;
+
+    // 音檔結尾之後（沒有聲音的區域）用灰底標示
+    const endX = Math.max((state.duration - off) * pps, 0);
+    if (endX < w) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
+        ctx.fillRect(endX, RULER, w - endX, h - RULER);
+    }
 
     // 刻度尺
     const step = [0.5, 1, 2, 5, 10, 30, 60, 120, 300, 600, 1800].find(s => s * pps >= 70) || 3600;
@@ -1327,7 +1336,7 @@ function initWave() {
         if (pair) {
             // 按住 Option 拖兩句的交界：前句的尾和後句的頭一起動；壓到最短後繼續拖，就推著旁邊的句子走
             const [a, b] = pair;
-            let roomAfter = Math.max(0, state.duration - segs[n - 1].end), roomBefore = segs[0].start;
+            let roomAfter = Infinity, roomBefore = segs[0].start;   // 往後推不設上限
             for (let k = b; k < n - 1; k++) roomAfter += gap(k);
             for (let k = 0; k < a; k++) roomBefore += gap(k);
             const lo = segs[a].start + MIN_DURATION, hi = segs[b].end - MIN_DURATION;
@@ -1339,7 +1348,7 @@ function initWave() {
             wave.drag = {
                 ...base, mode: 'ripple', i: hit.i, trimEnd, from: trimEnd ? hit.i + 1 : hit.i, anchor: trimEnd ? s.end : s.start,
                 lo: trimEnd ? MIN_DURATION - (s.end - s.start) : Math.min((segs[hit.i - 1]?.end ?? 0) - s.start, 0),
-                hi: Math.max(state.duration - segs[n - 1].start - MIN_DURATION, 0),   // 最後一句超出音檔的部分會被裁掉
+                hi: Infinity,   // 往後推不設上限，可以超出音檔結尾
             };
         } else if (hit) {
             const s = segs[hit.i];
@@ -1351,11 +1360,11 @@ function initWave() {
         } else {
             // 空白處：點一下跳到那裡，按住拖曳拉出一句新字幕
             const k = segs.findIndex(s => s.start > t), at = k < 0 ? n : k;
-            const lo = segs[at - 1]?.end ?? 0, hi = Math.max(lo, segs[at]?.start ?? state.duration);
+            const lo = segs[at - 1]?.end ?? 0, hi = Math.max(lo, segs[at]?.start ?? Infinity);
             wave.drag = { ...base, mode: 'new', at, lo, hi, t: clamp(t, lo, hi) };
         }
     });
-    window.addEventListener('mousemove', e => {
+    const onDrag = e => {
         const d = wave.drag;
         if (!d) return;
         if (d.mode === 'seek') return seek(wave.off + (e.clientX - el.getBoundingClientRect().left) / wave.pps);
@@ -1400,7 +1409,7 @@ function initWave() {
             for (const k of Object.keys(draft)) showTimes(+k);
             return drawWave();
         }
-        const prev = segs[d.i - 1]?.end ?? 0, next = segs[d.i + 1]?.start ?? state.duration;
+        const prev = segs[d.i - 1]?.end ?? 0, next = segs[d.i + 1]?.start ?? Infinity;
         const snap = t => snapTime(t, [prev, next], noSnap);
         let start = d.s0, end = d.e0;   // 不跟前後句重疊
         if (d.mode === 'start') start = clamp(snap(d.s0 + dt), Math.min(prev, d.s0), d.e0 - MIN_DURATION);
@@ -1416,7 +1425,26 @@ function initWave() {
         wave.draft = { [d.i]: { start, end } };
         showTimes(d.i);
         drawWave();
-    });
+    };
+    window.addEventListener('mousemove', e => { wave.lastMove = e; onDrag(e); });
+    // 拖曳時滑鼠靠近（或超出）波形區左右邊緣，波形就往那邊捲，越靠外捲越快
+    wave.autoScrollStep = () => {
+        const d = wave.drag, m = wave.lastMove;
+        if (!d || !m || (d.mode !== 'seek' && !d.moved)) return false;
+        const x = m.clientX - el.getBoundingClientRect().left, edge = 48;
+        const over = x > wave.w - edge ? x - (wave.w - edge) : x < edge ? x - edge : 0;
+        if (!over) return false;
+        const before = wave.off;
+        wave.off += clamp(over, -120, 120) * 0.25 / wave.pps;
+        clampOff();
+        const scrolled = wave.off - before;
+        if (!scrolled) return false;
+        if (d.mode !== 'seek') d.x0 -= scrolled * wave.pps;   // 畫面捲了多少，就等於滑鼠多拖了多少
+        onDrag(m);
+        return true;
+    };
+    const autoScroll = () => { if (wave.drag) { wave.autoScrollStep(); requestAnimationFrame(autoScroll); } };
+    el.addEventListener('mousedown', () => { wave.lastMove = null; requestAnimationFrame(autoScroll); });
     window.addEventListener('mouseup', () => {
         const d = wave.drag, draft = wave.draft, fresh = wave.draftNew, shift = wave.shift;
         wave.drag = wave.draft = wave.draftNew = wave.shift = null;
@@ -1432,7 +1460,7 @@ function initWave() {
         if (!d.moved || !(draft || shift)) return seek(d.t);
         for (const [i, times] of Object.entries(draft || {})) segs[i] = { ...segs[i], ...times };
         if (shift?.dt) {
-            const move = x => ({ ...x, start: x.start + shift.dt, end: Math.min(x.end + shift.dt, Math.max(state.duration, x.start + shift.dt + MIN_DURATION)) });
+            const move = x => ({ ...x, start: x.start + shift.dt, end: x.end + shift.dt });
             segs = segs.map((s, i) => i >= shift.from ? { ...move(s), words: (s.words || []).map(move) } : s);
         }
         commit(segs, { render: Object.keys(draft || {}).length + (shift ? 2 : 0) > 1 });
@@ -1781,6 +1809,8 @@ function initKeys() {
             'b': splitAtPlayhead, 'B': splitAtPlayhead,
             'm': toggleMarker, 'M': toggleMarker,
             'n': toggleSnap, 'N': toggleSnap,
+            '+': () => zoomAtPlayhead(1.5), '=': () => zoomAtPlayhead(1.5),
+            '-': () => zoomAtPlayhead(1 / 1.5), '_': () => zoomAtPlayhead(1 / 1.5),
             'Home': () => seek(0),
             'End': () => seek(state.duration),
             'ArrowUp': () => stepSelect(-1),
@@ -1801,6 +1831,12 @@ function initKeys() {
     document.addEventListener('click', e => { if (e.detail) e.target.closest?.('button')?.blur(); });
     $('speedSelect').addEventListener('change', e => e.target.blur());
     window.addEventListener('blur', () => setAlt(false));
+}
+
+// 以播放線為中心縮放；播放線不在畫面上時用畫面正中間
+function zoomAtPlayhead(factor) {
+    const x = (wave.time - wave.off) * wave.pps;
+    zoomWave(wave.pps * factor, x >= 0 && x <= wave.w ? x : wave.w / 2);
 }
 
 function stepSelect(delta) {
