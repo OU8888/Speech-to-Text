@@ -1,134 +1,191 @@
+// 矩陣雨：平常是背景；reveal() 時變成遮罩，雨落下的地方把白色蓋板擦掉，露出底下的頁面。
 class MatrixRain {
-    constructor() {
+    static CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789!@#$%^&*()';
+    static FONT = 14;          // 每格大小（px）
+    static STEP = 1000 / 60;   // 每一步的毫秒數（固定速度，不受螢幕更新率影響）
+    static HITS = 50;          // 標題字母被雨打中幾次後定型
+    static FADE_ROWS = 10;     // 揭開時邊緣的漸層列數
+
+    constructor(titleEl) {
         this.canvas = document.createElement('canvas');
+        this.canvas.className = 'rain';
         this.ctx = this.canvas.getContext('2d');
-        this.canvas.style.position = 'fixed';
-        this.canvas.style.top = '0';
-        this.canvas.style.left = '0';
-        this.canvas.style.width = '100%';
-        this.canvas.style.height = '100vh';
-        this.canvas.style.zIndex = '-1';
-        this.canvas.style.background = 'white';
-        this.canvas.style.pointerEvents = 'none';
         document.body.appendChild(this.canvas);
 
-        this.characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789!@#$%^&*()';
-        this.finalText = ['S', 'p', 'e', 'e', 'c', 'h', ' ', 'T', 'o', ' ', 'T', 'e', 'x', 't'];
-        this.fontSize = 14;
-        this.columns = 0;
-        this.drops = [];
-        this.letterOpacities = new Array(14).fill(0); // 14 letters in "Speech To Text"
-        this.letterHitCounts = new Array(14).fill(0); // 追蹤每個字母被擊中的次數
-        this.isGeneratingNew = true; // 控制是否生成新的字符雨
+        this.revealRows = null;   // 不是 null 時表示正在揭開
+        this.setTitle(titleEl);
+        this.onResize = () => this.layout();
+        window.addEventListener('resize', this.onResize);
+        this.layout();
+        document.fonts?.ready.then(() => this.measure());
 
-        window.addEventListener('resize', () => this.initializeCanvas());
-        this.initializeCanvas();
-        this.animate();
-
-        // 開始時設置所有字母為隨機字符
-        this.updateRandomCharacters();
+        this.last = performance.now();
+        this.acc = 0;
+        this.raf = requestAnimationFrame(t => this.frame(t));
     }
 
-    updateRandomCharacters() {
-        const titleLetters = document.querySelectorAll('.title span');
-        titleLetters.forEach((letter, index) => {
-            if (this.letterHitCounts[index] < 50) { // 只有在擊中次數小於50時才更新隨機字符
-                if (this.finalText[index] === ' ') {
-                    letter.textContent = ' ';
-                    letter.style.width = '0.5em';
-                    letter.style.display = 'inline-block';
-                } else {
-                    const randomChar = this.characters.charAt(Math.floor(Math.random() * this.characters.length));
-                    letter.textContent = randomChar;
-                }
-            }
-        });
+    randomChar() {
+        const c = MatrixRain.CHARS;
+        return c[Math.floor(Math.random() * c.length)];
     }
 
-    initializeCanvas() {
-        this.canvas.width = document.documentElement.clientWidth;
-        this.canvas.height = document.documentElement.clientHeight;
-        this.columns = Math.floor(this.canvas.width / this.fontSize);
-        this.drops = Array(this.columns).fill(0).map(() => Math.floor(Math.random() * -100));
-    }
-
-    animate() {
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        this.ctx.font = this.fontSize + 'px monospace';
-
-        if (Math.random() > 0.8 && this.isGeneratingNew) {
-            this.updateRandomCharacters();
+    // 標題：先全部是亂碼，被雨打中夠多次才變回 Speech To Text
+    setTitle(el) {
+        this.letters = [];
+        if (!el) return;
+        const text = el.getAttribute('aria-label') || '';
+        el.textContent = '';
+        for (const ch of text) {
+            const span = document.createElement('span');
+            if (ch === ' ') span.className = 'space';
+            el.appendChild(span);
+            this.letters.push({ el: span, final: ch, hits: 0 });
         }
+        this.scramble();
+    }
 
-        let hasActiveDrops = false;
-        for (let i = 0; i < this.drops.length; i++) {
-            if (this.drops[i] > 0) {
-                hasActiveDrops = true;
-                const text = this.characters.charAt(Math.floor(Math.random() * this.characters.length));
-                const y = this.drops[i] * this.fontSize;
+    scramble() {
+        for (const l of this.letters) {
+            if (l.final !== ' ' && l.hits < MatrixRain.HITS) l.el.textContent = this.randomChar();
+        }
+        this.measure();
+    }
 
-                if (y <= this.canvas.height) {
-                    this.ctx.fillText(text, i * this.fontSize, y);
-                }
+    // 只在字母內容或視窗改變時量位置（原本是每一幀、每一滴雨都量一次）
+    measure() {
+        for (const l of this.letters) {
+            const r = l.el.getBoundingClientRect();
+            l.cx = r.left + r.width / 2;
+            l.cy = r.top + r.height / 2;
+            l.w = r.width;
+            l.h = r.height;
+        }
+    }
 
-                const titleLetters = document.querySelectorAll('.title span');
-                titleLetters.forEach((letter, index) => {
-                    const rect = letter.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
+    layout() {
+        const dpr = window.devicePixelRatio || 1;
+        this.w = document.documentElement.clientWidth;
+        this.h = document.documentElement.clientHeight;
+        this.canvas.width = this.w * dpr;
+        this.canvas.height = this.h * dpr;
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(0, 0, this.w, this.h);
+        this.cols = Math.floor(this.w / MatrixRain.FONT);
+        this.rows = Math.ceil(this.h / MatrixRain.FONT);
+        this.drops = Array.from({ length: this.cols }, () => Math.floor(Math.random() * -100));
+        if (this.revealRows) this.revealRows = this.drops.map(() => Math.random() * -40);
+        this.measure();
+    }
 
-                    const rainX = i * this.fontSize;
-                    const rainY = this.drops[i] * this.fontSize;
+    frame(now) {
+        this.acc += Math.min(now - this.last, 100);
+        this.last = now;
+        while (this.acc >= MatrixRain.STEP) {
+            this.step();
+            this.acc -= MatrixRain.STEP;
+        }
+        if (this.canvas.isConnected) this.raf = requestAnimationFrame(t => this.frame(t));
+    }
 
-                    if (Math.abs(rainX - centerX) < rect.width &&
-                        Math.abs(rainY - centerY) < rect.height) {
-                        this.letterHitCounts[index]++;
-                        this.letterOpacities[index] = Math.min(1, this.letterHitCounts[index] / 50);
-                        letter.style.color = `rgba(0, 0, 0, ${this.letterOpacities[index]})`;
+    step() {
+        const { ctx, drops } = this;
+        const F = MatrixRain.FONT;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.fillRect(0, 0, this.w, this.h);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.font = F + 'px monospace';
 
-                        if (this.letterHitCounts[index] === 50) {
-                            letter.textContent = this.finalText[index];
-                            if (this.finalText[index] === ' ') {
-                                letter.style.width = '0.5em';
-                                letter.style.display = 'inline-block';
-                            }
-                        }
-                    }
-                });
+        const pending = this.letters.some(l => l.hits < MatrixRain.HITS);
+        if (pending && Math.random() > 0.8) this.scramble();
+
+        for (let i = 0; i < drops.length; i++) {
+            const x = i * F;
+            const y = drops[i] * F;
+            if (drops[i] > 0 && y <= this.h) {
+                ctx.fillText(this.randomChar(), x, y);
+                if (pending) this.hitTitle(x, y);
             }
-
-            if (this.drops[i] * this.fontSize > this.canvas.height) {
-                if (Math.random() > 0.975) {
-                    this.drops[i] = Math.floor(Math.random() * -20);
-                }
+            if (y > this.h) {
+                // 揭開階段不再生新的雨
+                if (!this.revealRows && Math.random() > 0.975) drops[i] = Math.floor(Math.random() * -20);
             } else {
-                this.drops[i]++;
+                drops[i]++;
             }
         }
 
-        if (hasActiveDrops || this.isGeneratingNew) {
-            requestAnimationFrame(() => this.animate());
+        if (this.revealRows) this.stepReveal();
+    }
+
+    hitTitle(x, y) {
+        for (const l of this.letters) {
+            if (l.hits >= MatrixRain.HITS || Math.abs(x - l.cx) >= l.w || Math.abs(y - l.cy) >= l.h) continue;
+            l.hits++;
+            l.el.style.color = `rgba(0, 0, 0, ${l.hits / MatrixRain.HITS})`;
+            if (l.hits === MatrixRain.HITS) l.el.textContent = l.final;
         }
     }
 
-    // 停止生成新的字符雨的方法
-    stopGenerating() {
-        this.isGeneratingNew = false;
+    // 揭開：每一欄有一顆「擦除雨滴」，它上方的白色蓋板被擦掉（邊緣是漸層），雨滴本身照樣畫字
+    stepReveal() {
+        const { ctx, revealRows } = this;
+        const F = MatrixRain.FONT;
+        const fade = MatrixRain.FADE_ROWS;
+        let done = true;
+
+        for (let i = 0; i < revealRows.length; i++) {
+            revealRows[i] += 1.1;
+            const head = revealRows[i];
+            if (head < this.rows + fade + 1) done = false;
+            if (head <= 0) continue;
+            const x = i * F;
+
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.fillText(this.randomChar(), x, head * F);
+
+            ctx.globalCompositeOperation = 'destination-out';
+            const solid = (head - fade) * F;
+            if (solid > 0) {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(x, 0, F, solid);
+            }
+            for (let k = 0; k < fade; k++) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${0.45 * (1 - k / fade)})`;
+                ctx.fillRect(x, solid + k * F, F, F);
+            }
+        }
+        ctx.globalCompositeOperation = 'source-over';
+
+        if (done) {
+            const cb = this.onRevealed;
+            this.destroy();
+            cb?.();
+        }
     }
 
-    // 檢查是否所有字符雨都已完成
-    isFinished() {
-        return this.drops.every(drop => drop * this.fontSize > this.canvas.height);
+    // 把雨拉到最上層當蓋板（此時整片是不透明白色加上雨）
+    cover() {
+        this.canvas.classList.add('cover');
     }
 
-    static init(containerId) {
-        if (containerId === 'result-container') return null;
-        const instance = new MatrixRain();
-
-        // 移除監聽處理頁面的顯示，讓矩陣雨持續下著
-        return instance;
+    // 開始揭開底下的頁面，雨下完後呼叫 onDone
+    reveal(onDone) {
+        this.cover();
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            this.canvas.style.transition = 'opacity .4s';
+            this.canvas.style.opacity = '0';
+            setTimeout(() => { this.destroy(); onDone?.(); }, 400);
+            return;
+        }
+        this.onRevealed = onDone;
+        this.revealRows = this.drops.map(() => Math.random() * -40);
     }
-} 
+
+    destroy() {
+        cancelAnimationFrame(this.raf);
+        window.removeEventListener('resize', this.onResize);
+        this.canvas.remove();
+    }
+}

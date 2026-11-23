@@ -6,250 +6,170 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STT - 語音轉文字</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
 
 <body>
+    <!-- 圖示（取代原本的三套圖示庫） -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+            <symbol id="i-back" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5" /></symbol>
+            <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></symbol>
+            <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></symbol>
+            <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14" /></symbol>
+            <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></symbol>
+            <symbol id="i-magic" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" /></symbol>
+            <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5" /></symbol>
+            <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></symbol>
+            <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+            <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+            <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3l14 9-14 9z" fill="currentColor" /></symbol>
+            <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 4v16M17 4v16" stroke-width="3.5" /></symbol>
+            <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" /></symbol>
+            <symbol id="i-keyboard" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10" /></symbol>
+            <symbol id="i-merge" viewBox="0 0 24 24"><path d="M12 22v-6M12 8V2M15 19l-3-3-3 3M15 5l-3 3-3-3" /></symbol>
+        </defs>
+    </svg>
+
     <main>
-        <div id="upload-container">
+        <!-- 1. 上傳 -->
+        <section id="upload-container">
             <div id="drop-area">
                 <div class="upload-content">
-                    <h1 class="title">
-                        <span>S</span>
-                        <span>p</span>
-                        <span>e</span>
-                        <span>e</span>
-                        <span>c</span>
-                        <span>h</span>
-                        <span>&nbsp;</span>
-                        <span>T</span>
-                        <span>o</span>
-                        <span>&nbsp;</span>
-                        <span>T</span>
-                        <span>e</span>
-                        <span>x</span>
-                        <span>t</span>
-                    </h1>
+                    <h1 class="title" aria-label="Speech To Text"></h1>
                 </div>
                 <p class="upload-text">點擊或拖曳上傳檔案</p>
-                <input type="file" id="fileInput" accept="audio/*,video/*" style="display: none;">
+                <button id="resumeBtn" class="resume-btn" hidden></button>
+                <input type="file" id="fileInput" accept="audio/*,video/*" hidden>
             </div>
-        </div>
+        </section>
 
-        <!-- 新增轉換確認頁面 -->
-        <div id="confirm-container" style="display: none;">
+        <!-- 2. 確認 -->
+        <section id="confirm-container" hidden>
             <div class="confirm-content">
                 <div class="file-info">
                     <h2>準備轉換</h2>
                     <p id="selected-filename">已選擇檔案：<span></span></p>
                 </div>
-                <div class="language-select">
-                    <h3>語言設定</h3>
-                    <p class="language-description">選擇音訊的主要語言，以提高轉錄準確度</p>
-                    <div class="select-root">
+                <div class="setting-row">
+                    <span class="setting-label">語言</span>
+                    <div class="select-root" id="langSelect">
                         <button class="select-trigger" aria-haspopup="listbox" aria-expanded="false">
                             <span class="select-value">繁體中文</span>
-                            <span class="select-icon">
-                                <span class="iconify" data-icon="lucide:chevron-down"></span>
-                            </span>
+                            <svg class="ic"><use href="#i-chevron" /></svg>
                         </button>
-                        <div class="select-content" hidden>
-                            <div class="select-viewport">
-                                <div class="select-group">
-                                    <div class="select-item" data-value="zh" data-display="繁體中文" role="option"
-                                        aria-selected="true">
-                                        <span class="select-item-indicator">
-                                            <span class="iconify" data-icon="lucide:check"></span>
-                                        </span>
-                                        <div class="select-item-text">繁體中文</div>
-                                    </div>
-                                    <div class="select-item" data-value="en" data-display="英文" role="option">
-                                        <span class="select-item-indicator">
-                                            <span class="iconify" data-icon="lucide:check"></span>
-                                        </span>
-                                        <div class="select-item-text">English</div>
-                                    </div>
-                                    <div class="select-item" data-value="ja" data-display="日文" role="option">
-                                        <span class="select-item-indicator">
-                                            <span class="iconify" data-icon="lucide:check"></span>
-                                        </span>
-                                        <div class="select-item-text">日本語</div>
-                                    </div>
-                                    <div class="select-item" data-value="ko" data-display="韓文" role="option">
-                                        <span class="select-item-indicator">
-                                            <span class="iconify" data-icon="lucide:check"></span>
-                                        </span>
-                                        <div class="select-item-text">한국어</div>
-                                    </div>
-                                    <div class="select-item" data-value="fr" data-display="法文" role="option">
-                                        <span class="select-item-indicator">
-                                            <span class="iconify" data-icon="lucide:check"></span>
-                                        </span>
-                                        <div class="select-item-text">Français</div>
-                                    </div>
-                                    <div class="select-item" data-value="de" data-display="德文" role="option">
-                                        <span class="select-item-indicator">
-                                            <span class="iconify" data-icon="lucide:check"></span>
-                                        </span>
-                                        <div class="select-item-text">Deutsch</div>
-                                    </div>
-                                    <div class="select-item" data-value="es" data-display="西班牙文" role="option">
-                                        <span class="select-item-indicator">
-                                            <span class="iconify" data-icon="lucide:check"></span>
-                                        </span>
-                                        <div class="select-item-text">Español</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="select-content" role="listbox" hidden></div>
                     </div>
                 </div>
-                <div class="frequent-words">
-                    <h3>高頻詞設定</h3>
-                    <p class="frequent-words-description">用戶可自訂高頻詞替換，自動修正錯誤文字，提升轉錄準確性。</p>
-                    <textarea class="frequent-words-input" placeholder="請輸入高頻詞，多個詞彙請用逗號分隔"></textarea>
+                <div class="setting-row">
+                    <span class="setting-label">專屬詞庫</span>
+                    <span id="dictSummary" class="setting-value"></span>
+                    <button id="openDictFromConfirm" class="tool-btn sm">管理</button>
                 </div>
                 <div class="confirm-actions">
                     <button id="startConversionBtn" class="primary-btn">開始轉換</button>
                     <button id="backToUploadBtn" class="secondary-btn">返回</button>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- 新增高頻詞對話框 -->
-        <div id="words-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>新增高頻詞</h2>
-                    <button class="close-btn">
-                        <span class="iconify" data-icon="mingcute:close-line"></span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="input-group">
-                        <label for="wordsInput">請輸入高頻詞（用逗號隔開）：</label>
-                        <textarea id="wordsInput" placeholder="例如：三得利,機器學習,深度學習"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button id="confirmWordsBtn" class="primary-btn">確認</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="processing-container" style="display: none;">
+        <!-- 3. 處理中 -->
+        <section id="processing-container" hidden>
             <div id="processing-area">
                 <div class="progress-bar">
-                    <div id="progress" style="width: 0%"></div>
+                    <div id="progress"></div>
                 </div>
                 <div class="progress-info">
                     <span id="progress-percent">0%</span>
-                    <p class="upload-text">準備處理...</p>
+                    <p class="upload-text" id="progress-text">準備處理...</p>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div id="result-container" style="display: none;">
+        <!-- 4. 結果 -->
+        <section id="result-container" hidden>
             <div id="top-bar">
                 <div class="nav-left">
-                    <a href="#" id="backLink" class="back-btn" aria-label="返回上傳頁面">
-                        <span class="iconify" data-icon="mingcute:arrow-left-line"></span>
-                    </a>
-                    <div class="filename-container">
-                        <span id="filename-display" class="filename-text"></span>
-                        <input type="text" id="filename-input" class="filename-input" style="display: none;">
-                    </div>
+                    <button id="backLink" class="round-btn" aria-label="返回上傳頁面"><svg class="ic"><use href="#i-back" /></svg></button>
+                    <span id="filename-display" class="filename-text" contenteditable="plaintext-only" spellcheck="false" title="點一下可改檔名"></span>
                 </div>
-                <div class="download-dropdown">
-                    <a href="#" class="back-btn" aria-label="下載選項" aria-haspopup="true" aria-expanded="false">
-                        <i class="fa-solid fa-download"></i>
-                    </a>
-                    <div class="download-menu">
-                        <a href="#" class="download-item" data-format="srt">
-                            <span class="download-item-text">字幕</span>
-                            <span class="download-item-desc">SubRip (.srt)</span>
-                        </a>
-                        <a href="#" class="download-item" data-format="vtt">
-                            <span class="download-item-text">WebVTT</span>
-                            <span class="download-item-desc">Web Video (.vtt)</span>
-                        </a>
-                        <a href="#" class="download-item" data-format="txt">
-                            <span class="download-item-text">文本</span>
-                            <span class="download-item-desc">純文字 (.txt)</span>
-                        </a>
-                        <a href="#" class="download-item" data-format="json">
-                            <span class="download-item-text">JSON</span>
-                            <span class="download-item-desc">開發數據 (.json)</span>
-                        </a>
-                        <a href="#" class="download-item" data-format="doc">
-                            <span class="download-item-text">Word</span>
-                            <span class="download-item-desc">文件 (.doc)</span>
-                        </a>
+                <div class="nav-right">
+                    <button id="keysBtn" class="round-btn" title="快捷鍵（?）" aria-label="快捷鍵"><svg class="ic"><use href="#i-keyboard" /></svg></button>
+                    <div class="download-dropdown">
+                        <button id="downloadBtn" class="round-btn" aria-label="下載選項" aria-haspopup="true" aria-expanded="false"><svg class="ic"><use href="#i-download" /></svg></button>
+                        <div class="download-menu" id="downloadMenu">
+                            <button class="download-item" data-format="srt"><b>字幕</b><span>SubRip (.srt)</span></button>
+                            <button class="download-item" data-format="vtt"><b>WebVTT</b><span>Web Video (.vtt)</span></button>
+                            <button class="download-item" data-format="txt"><b>文本</b><span>純文字 (.txt)</span></button>
+                            <button class="download-item" data-format="json"><b>JSON</b><span>開發數據 (.json)</span></button>
+                            <button class="download-item" data-format="doc"><b>Word</b><span>文件 (.doc)</span></button>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div id="content-area">
-                <div id="summary-container">
-                    <div class="summary-actions" style="display: none;">
-                        <button class="icon-btn" id="regenerateSummaryBtn" title="重新生成內容摘要">
-                            <span class="iconify" data-icon="ri:reset-left-fill"></span>
-                        </button>
-                        <button class="icon-btn" id="copySummaryBtn" title="複製">
-                            <span class="iconify" data-icon="ri:file-copy-2-line"></span>
-                        </button>
+
+            <div id="content-area" class="no-summary">
+                <aside id="summary-container">
+                    <div id="summary-scroll">
+                        <button id="generateSummaryBtn" class="summary-btn"><svg class="ic"><use href="#i-magic" /></svg>生成內容摘要</button>
+                        <div id="summary-text" hidden></div>
                     </div>
-                    <button id="generateSummaryBtn" class="summary-btn">
-                        <span class="iconify" data-icon="mingcute:magic-line"></span>
-                        生成內容摘要
-                    </button>
-                    <div id="summary-text"></div>
-                </div>
+                    <div class="summary-actions" hidden>
+                        <button class="icon-btn" id="regenerateSummaryBtn" title="重新生成內容摘要"><svg class="ic"><use href="#i-reset" /></svg></button>
+                        <button class="icon-btn" id="copySummaryBtn" title="複製"><svg class="ic"><use href="#i-copy" /></svg></button>
+                    </div>
+                </aside>
                 <div id="resizer"></div>
                 <div id="transcript-container">
-                    <div id="transcript-header">
-                        <div class="header-controls">
-                            <button id="findReplaceBtn" class="find-replace-btn">
-                                <span class="iconify" data-icon="mingcute:search-line"></span>
-                                查找
-                            </button>
-                        </div>
+                    <div class="header-controls">
+                        <button id="summaryToggle" class="tool-btn" title="顯示／收起摘要欄"><svg class="ic"><use href="#i-magic" /></svg>摘要</button>
+                        <button id="findReplaceBtn" class="tool-btn"><svg class="ic"><use href="#i-search" /></svg>查找</button>
+                        <button id="dictBtn" class="tool-btn"><svg class="ic"><use href="#i-book" /></svg>詞庫</button>
+                        <button id="proofBtn" class="tool-btn" title="讓 AI 列出疑似錯字，由你逐條決定要不要改"><svg class="ic"><use href="#i-check" /></svg>AI 校對</button>
+                        <span class="hint">按住 <kbd>⌥ Option</kbd>（Alt）：點文字上方的小點拆句，點時間碼下方的箭頭合併</span>
                     </div>
                     <div id="transcript-text" class="transcript-editor"></div>
                 </div>
             </div>
-        </div>
-    </main>
-    <script src="script.js"></script>
-    <script src="matrixRain.js"></script>
 
-    <!-- 添加查找替換對話框 -->
-    <div id="findReplaceModal" class="modal">
+            <!-- 波形區 -->
+            <div id="wave-dock">
+                <div class="wave-bar">
+                    <button id="playBtn" class="round-btn" aria-label="播放／暫停"><svg class="ic"><use href="#i-play" /></svg></button>
+                    <span id="timeLabel" class="time-label">00:00 / 00:00</span>
+                    <select id="speedSelect" aria-label="播放速度">
+                        <option value="0.5">0.5×</option>
+                        <option value="0.75">0.75×</option>
+                        <option value="1" selected>1×</option>
+                        <option value="1.25">1.25×</option>
+                        <option value="1.5">1.5×</option>
+                        <option value="2">2×</option>
+                    </select>
+                    <span class="hint">拖頭尾調時間；<kbd>⌥</kbd> 拖交界同時改兩句；<kbd>Shift</kbd> 拖曳讓後面全部跟著移</span>
+                    <span class="spacer"></span>
+                    <button id="alignBtn" class="tool-btn sm" title="把每一句的頭尾收到實際有聲音的地方">貼齊聲音</button>
+                    <button id="markBtn" class="tool-btn sm" title="在播放位置放／移除標記點（M）">標記</button>
+                    <button id="snapBtn" class="tool-btn sm active" title="磁力吸附：拖曳時貼齊播放線、標記點與旁邊句子（N）">磁力</button>
+                    <button id="zoomOutBtn" class="tool-btn sm" title="縮小">−</button>
+                    <button id="zoomInBtn" class="tool-btn sm" title="放大">＋</button>
+                    <button id="zoomFitBtn" class="tool-btn sm" title="看整段">整段</button>
+                </div>
+                <canvas id="wave"></canvas>
+            </div>
+            <audio id="player" preload="auto"></audio>
+        </section>
+    </main>
+
+    <!-- 查找取代 -->
+    <div id="findReplaceModal" class="modal" hidden>
         <div class="modal-content">
             <div class="modal-header">
                 <h2>查找關鍵詞</h2>
-                <button class="close-btn" id="findReplaceCloseBtn">
-                    <span class="iconify" data-icon="mingcute:close-line"></span>
-                </button>
+                <button class="close-btn" data-close><svg class="ic"><use href="#i-close" /></svg></button>
             </div>
             <div class="modal-body">
                 <div class="search-inputs">
-                    <div class="input-group">
-                        <input type="text" id="searchInput" placeholder="查找關鍵詞" />
-                        <button class="clear-btn">
-                            <span class="iconify" data-icon="mingcute:close-line"></span>
-                        </button>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="replaceInput" placeholder="替換為" />
-                        <button class="clear-btn">
-                            <span class="iconify" data-icon="mingcute:close-line"></span>
-                        </button>
-                    </div>
+                    <input type="text" id="searchInput" placeholder="查找關鍵詞">
+                    <input type="text" id="replaceInput" placeholder="替換為">
                 </div>
                 <div class="results-table">
                     <table>
@@ -258,21 +178,120 @@
                                 <th>開始時間</th>
                                 <th>原文</th>
                                 <th>結果</th>
-                                <th></th>
                             </tr>
                         </thead>
                         <tbody id="searchResults"></tbody>
                     </table>
                 </div>
-                <div class="modal-footer">
-                    <div class="results-count">共 <span id="resultCount">0</span> 條結果</div>
-                    <button id="replaceAllBtn" class="replace-btn">替換</button>
+            </div>
+            <div class="modal-footer">
+                <div class="results-count">共 <span id="resultCount">0</span> 條結果</div>
+                <button id="replaceAllBtn" class="replace-btn">替換</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 校對建議 -->
+    <div id="proofModal" class="modal" hidden>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>AI 校對建議</h2>
+                <button class="close-btn" data-close><svg class="ic"><use href="#i-close" /></svg></button>
+            </div>
+            <div class="modal-body">
+                <p id="proofStatus" class="description"></p>
+                <div class="results-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>時間</th>
+                                <th>建議修改</th>
+                                <th>原因</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="proofList"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <label class="results-count"><input type="checkbox" id="proofRemember"> 接受時一併加入詞庫</label>
+                <button id="proofAcceptAll" class="replace-btn" hidden>全部接受</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 專屬詞庫 -->
+    <div id="dictModal" class="modal" hidden>
+        <div class="modal-content narrow">
+            <div class="modal-header">
+                <h2>專屬詞庫</h2>
+                <button class="close-btn" data-close><svg class="ic"><use href="#i-close" /></svg></button>
+            </div>
+            <div class="modal-body scroll">
+                <h3>常用詞</h3>
+                <p class="description">辨識時會提示給模型優先認得，並自動修正同音錯字。</p>
+                <div id="dictTerms" class="chips"></div>
+                <form id="termForm" class="inline-form">
+                    <input type="text" id="termInput" placeholder="新增常用詞，按 Enter">
+                </form>
+                <h3>修正規則</h3>
+                <p class="description">辨識完成後自動把左邊的字換成右邊的字。</p>
+                <div id="dictRules" class="rules"></div>
+                <form id="ruleForm" class="inline-form">
+                    <input type="text" id="ruleFrom" placeholder="錯字">
+                    <span>→</span>
+                    <input type="text" id="ruleTo" placeholder="正確字">
+                    <button class="tool-btn" type="submit">新增</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="results-count">存在這台瀏覽器</div>
+                <div class="footer-actions">
+                    <button id="dictImportBtn" class="tool-btn">匯入</button>
+                    <button id="dictExportBtn" class="tool-btn">匯出</button>
+                    <input type="file" id="dictFile" accept="application/json,.json" hidden>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 快捷鍵 -->
+    <div id="keysModal" class="modal" hidden>
+        <div class="modal-content narrow">
+            <div class="modal-header">
+                <h2>快捷鍵</h2>
+                <button class="close-btn" data-close><svg class="ic"><use href="#i-close" /></svg></button>
+            </div>
+            <div class="modal-body scroll">
+                <table class="keys">
+                    <tr><td><kbd>空白鍵</kbd></td><td>播放／暫停；滑鼠停在波形上時從滑鼠位置開始播（改字時用 <kbd>Shift</kbd>+<kbd>空白鍵</kbd>）</td></tr>
+                    <tr><td><kbd>Home</kbd> <kbd>End</kbd></td><td>跳到最前面／最後面</td></tr>
+                    <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>上一句／下一句</td></tr>
+                    <tr><td><kbd>Enter</kbd></td><td>開始改字；改字時按下＝完成</td></tr>
+                    <tr><td><kbd>Esc</kbd></td><td>結束改字（放棄這次修改）</td></tr>
+                    <tr><td><kbd>Tab</kbd></td><td>改字時跳到下一句（<kbd>Shift</kbd>+<kbd>Tab</kbd> 上一句）</td></tr>
+                    <tr><td><kbd>Delete</kbd></td><td>刪除選取的句子</td></tr>
+                    <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>把選取句子的開頭／結尾設到播放位置</td></tr>
+                    <tr><td><kbd>B</kbd></td><td>在播放位置把句子切成兩句</td></tr>
+                    <tr><td><kbd>M</kbd></td><td>在播放位置放標記點，同一處再按一次移除</td></tr>
+                    <tr><td><kbd>N</kbd></td><td>開關磁力吸附（拖曳時按住 <kbd>⌘</kbd>/<kbd>Ctrl</kbd> 可暫時關掉）</td></tr>
+                    <tr><td>按住 <kbd>⌥ Option</kbd> / <kbd>Alt</kbd></td><td>逐字稿：顯示拆點與合併鈕，點一下拆開或併起來。<br>波形：拖兩句相貼的交界，同時改前句結尾與後句開頭；壓到最短後繼續拖會推著旁邊的句子走</td></tr>
+                    <tr><td>按住 <kbd>Shift</kbd> 拖曳</td><td>波形：拖某一句，它之後的所有字幕一起平移；拖結尾則只改這句的結尾，後面跟著移</td></tr>
+                    <tr><td><kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>查找取代</td></tr>
+                    <tr><td><kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>復原（加 <kbd>Shift</kbd> 重做）</td></tr>
+                    <tr><td><kbd>⌘</kbd>/<kbd>Ctrl</kbd>+滾輪</td><td>縮放波形（直接滾動＝左右捲動）</td></tr>
+                    <tr><td><kbd>?</kbd></td><td>顯示這張表</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
 
+    <div id="toast" class="toast" hidden></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/cn2t.js" defer></script>
+    <script src="matrixRain.js" defer></script>
+    <script src="script.js" defer></script>
 </body>
 
 </html>
