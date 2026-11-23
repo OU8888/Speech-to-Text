@@ -1259,6 +1259,16 @@ function snapTime(t, extra, disabled) {
     return best;
 }
 
+// 磁力開著時，按住 Shift 拖播放線：貼齊最近一句的開頭或結尾（也貼標記點）
+function snapPlayhead(t, shift) {
+    if (!shift || !state.snap) return t;
+    let best = t, gap = 10 / wave.pps;
+    for (const c of [...state.segs.flatMap(s => [s.start, s.end]), ...state.markers]) {
+        if (Math.abs(c - t) < gap) { gap = Math.abs(c - t); best = c; }
+    }
+    return best;
+}
+
 function toggleMarker() {
     const t = player.currentTime, k = state.markers.findIndex(m => Math.abs(m - t) <= 6 / wave.pps);
     if (k >= 0) state.markers.splice(k, 1); else state.markers.push(t);
@@ -1356,7 +1366,7 @@ function initWave() {
             wave.drag = { ...base, ...hit, s0: s.start, e0: s.end };
         } else if (e.offsetY < RULER) {
             wave.drag = { mode: 'seek' };
-            seek(t);
+            seek(snapPlayhead(t, e.shiftKey));
         } else {
             // 空白處：點一下跳到那裡，按住拖曳拉出一句新字幕
             const k = segs.findIndex(s => s.start > t), at = k < 0 ? n : k;
@@ -1367,7 +1377,7 @@ function initWave() {
     const onDrag = e => {
         const d = wave.drag;
         if (!d) return;
-        if (d.mode === 'seek') return seek(wave.off + (e.clientX - el.getBoundingClientRect().left) / wave.pps);
+        if (d.mode === 'seek') return seek(snapPlayhead(wave.off + (e.clientX - el.getBoundingClientRect().left) / wave.pps, e.shiftKey));
         const dx = e.clientX - d.x0;
         if (Math.abs(dx) > 3) d.moved = true;
         if (!d.moved) return;
